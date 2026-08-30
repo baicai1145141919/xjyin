@@ -226,6 +226,7 @@
   #pageStart .diff-btn.sel { border-color:#c9a227; background:rgba(201,162,39,.10); box-shadow:none; color:#e8edf2; }
   #pageStart .diff-btn.sel .dd { color:#c9a227; }
   #pageStart .music-row { justify-content:flex-start; margin:0 0 20px; gap:10px; }
+  .bgm-hint { color:#c9a227; font-size:12px; letter-spacing:1px; }
   #pageStart .start-links { display:flex; align-items:center; gap:8px; margin-top:14px; }
   .link-btn { background:none; border:none; color:#6f7883; font-size:12px; cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:3px; }
   .link-btn:hover { color:#98a3af; }
@@ -390,6 +391,7 @@
 
     <div class="music-row">
       <span class="music-label">背景音乐《朋友的酒》</span>
+      <span id="bgmHint" class="bgm-hint" style="display:none"></span>
       <button class="music-toggle on" id="musicToggle" type="button">开启中</button>
       <button class="music-pick" id="musicPick" type="button" title="选择本地音频文件作为背景音乐">选歌曲</button>
       <input type="file" id="musicFile" accept="audio/*" style="display:none">
@@ -1335,27 +1337,49 @@ function startBGM(){
       bgmAudio.volume = 0.5;
       bgmAudio.preload = 'auto';
       // 原曲文件缺失或无法解码：自动回退到合成旋律，保证有声音
-      bgmAudio.addEventListener('error', ()=>{ bgmAudio = null; bgmFallbackUsed = true; fallbackToSynth(); });
+      bgmAudio.addEventListener('error', ()=>{ bgmAudio = null; bgmFallbackUsed = true; setBgmHint(true); fallbackToSynth(); });
       // 文件较大，首次 play 时可能尚未缓冲就绪：缓冲完成后补播一次
-      bgmAudio.addEventListener('canplay', ()=>{ if(musicOn && bgmAudio) bgmAudio.play().catch(()=>{}); });
+      bgmAudio.addEventListener('canplay', ()=>{
+        if(musicOn && bgmAudio) bgmAudio.play().then(()=>{ stopSynth(); setBgmHint(true); }).catch(()=>{});
+      });
     }
     const p = bgmAudio.play();
-    if(p && typeof p.catch === 'function'){
-      p.catch(()=>{
-        // 自动播放被拦截或尚未就绪：用合成旋律兜底，保证「音乐开着就听得到声音」
-        fallbackToSynth();
-      });
+    if(p && typeof p.then === 'function'){
+      p.then(()=>{ stopSynth(); setBgmHint(true); })
+       .catch(()=>{ fallbackToSynth(); setBgmHint(false); });
     }
     return;
   }
   fallbackToSynth();
 }
+// 原曲成功播放后停掉合成旋律，避免两种声音叠在一起
+function stopSynth(){
+  if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+}
 function fallbackToSynth(){
   ensureAudio();
   if(!audioCtx) return;
   if(musicTimer) return;
+  // AudioContext 未激活（缺用户手势）：等 resume 之后再启动，否则音符会堆积成一团噪音
+  if(audioCtx.state === 'suspended'){
+    audioCtx.resume().then(()=>{
+      if(musicOn && !musicTimer && !bgmAudio){
+        musicTimer = setInterval(playBgmNote, 360);
+        playBgmNote();
+      }
+    }).catch(()=>{});
+    return;
+  }
   musicTimer = setInterval(playBgmNote, 360);
   playBgmNote();
+}
+// 音乐状态提示：被浏览器自动播放策略拦截时，引导用户点一下页面
+function setBgmHint(playing){
+  const lab = document.getElementById('bgmHint');
+  if(!lab) return;
+  if(playing || !musicOn){ lab.style.display = 'none'; return; }
+  lab.textContent = '· 点页面任意处开启音乐';
+  lab.style.display = 'inline';
 }
 // 浏览器禁止无用户手势的自动播放：首次任意交互（点击 / 触摸 / 按键）时启动音乐
 let bgmGestureBound = false;
@@ -1370,6 +1394,8 @@ function armFirstGestureBGM(){
   ['click','touchstart','keydown'].forEach(ev=> window.addEventListener(ev, kick));
 }
 armFirstGestureBGM();
+// 页面加载即尝试播放：浏览器允许时直接出声；被拦截则等首次手势，并提示用户点一下
+if(musicOn){ startBGM(); }
 function stopBGM(){
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
   if(bgmAudio){ bgmAudio.pause(); }
