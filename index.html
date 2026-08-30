@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>监管与扩张 · 双人对抗卡牌（单人对AI）</title>
+<title>许印卡牌 · 监管与扩张（单人对AI）</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
@@ -199,6 +199,9 @@
   .gcard.macro { background:linear-gradient(160deg,#6366f1,#3730a3); }
   .btn-guide { background:linear-gradient(180deg,#6366f1,#4338ca); color:#fff; border:none; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:700; cursor:pointer; width:100%; margin:6px 0 16px; box-shadow:0 6px 16px rgba(67,56,202,.35); transition:transform .12s; }
   .btn-guide:hover { transform:translateY(-2px); }
+  .btn-ad { background:linear-gradient(180deg,#fb923c,#ea580c); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-size:13.5px; font-weight:700; cursor:pointer; width:100%; margin:0 0 12px; box-shadow:0 6px 16px rgba(234,88,12,.32); transition:transform .12s; }
+  .btn-ad:hover { transform:translateY(-2px); }
+  .btn-ad .ad-tag { font-size:10px; opacity:.85; font-weight:600; margin-left:6px; border:1px solid rgba(255,255,255,.5); border-radius:4px; padding:1px 4px; }
 
   /* ============ 回合意外事件弹窗 ============ */
   .event-overlay { position:fixed; inset:0; background:rgba(6,8,20,.74); backdrop-filter:blur(3px);
@@ -244,8 +247,8 @@
 <div class="page active" id="pageStart">
   <div class="panel">
     <div class="logo">⚖️</div>
-    <h1>监管与扩张</h1>
-    <div class="tag">双阵营经济博弈卡牌 · 单人对 AI（架空题材）</div>
+    <h1>许印卡牌</h1>
+    <div class="tag">监管与扩张 · 双阵营经济博弈卡牌（单人对 AI）</div>
     <div class="story">
       一家靠高杠杆狂奔的地产巨头 <b>恒盛集团</b>，与维护市场秩序的 <b>监管方</b> 展开 10 个回合的攻防。
       你将在开局<b>抽签</b>决定扮演哪一方——掌门人或监管者，另一方由 AI 接管。<br><br>
@@ -276,6 +279,7 @@
       <input type="file" id="musicFile" accept="audio/*" style="display:none">
     </div>
 
+    <button class="btn-ad" id="adBtn" type="button">🐭 猫和老鼠官方手游 · 前往官网<span class="ad-tag">广告</span></button>
     <button class="btn-start" id="drawBtn">抽签开局 ▶</button>
   </div>
 </div>
@@ -284,7 +288,7 @@
 <!-- ========== 对局页 ========== -->
 <div class="page" id="pageGame">
   <div class="topbar">
-    <div class="title">监管与扩张</div>
+    <div class="title">许印卡牌</div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div class="role">你扮演：<b id="yourRole">—</b> ｜ 对手：AI（<span id="aiRole">—</span>）｜ 第 <b id="turnNum">1</b> / <b id="maxTurnNum">10</b> 回合</div>
       <button class="mtop-music on" id="mtopMusic" type="button">🎵 音乐:开</button>
@@ -1329,6 +1333,8 @@ function surrender(){
 
 // 新手指导已拆分为独立 guide.html（开始页点击「📖 查看完整新手指导」跳转）
 document.getElementById('guideBtn').onclick = ()=> location.href = 'guide.html';
+// 广告按钮：新窗口打开《猫和老鼠》官方手游官网
+document.getElementById('adBtn').onclick = ()=> window.open('https://tom.163.com/', '_blank', 'noopener');
 </script>
 </body>
 </html>
