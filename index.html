@@ -7,8 +7,8 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
-    background: radial-gradient(1200px 620px at 50% -8%, #16233b, #0f172a 62%);
-    color:#e2e8f0; padding:16px; min-height:100vh; }
+    background: radial-gradient(1200px 620px at 50% -8%, #1a1f24, #101317 62%);
+    color:#dfe6ec; padding:16px; min-height:100vh; }
 
   .page { display:none; }
   #pageStart.active, #pageEnd.active { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
@@ -141,6 +141,68 @@
   .log .ai { color:#fca5a5; }
   .log .you { color:#6ee7b7; }
 
+  /* ===== 对局页：卷宗风格（去模板感，与开始页统一） ===== */
+  .topbar { border-bottom:1px solid #2b3138; padding-bottom:9px; }
+  .topbar .title { font-size:17px; letter-spacing:6px; color:#e8edf2; font-weight:800; }
+  .topbar .role { font-size:12px; color:#8b95a0; }
+  .topbar .role b { color:#c9a227; }
+  .mtop-music { background:transparent; border:1px solid #2b3138; color:#8b95a0; border-radius:3px; padding:6px 12px; font-size:12px; font-weight:600; }
+  .mtop-music:hover { border-color:#3a424b; color:#dfe6ec; }
+  .mtop-music.on { border-color:#c9a227; color:#c9a227; }
+
+  .side { background:#191d21; border:1px solid #2b3138; border-radius:3px; }
+  .side h3 { font-size:12px; letter-spacing:2px; color:#8b95a0; font-weight:700; }
+  .badge { background:transparent; border:1px solid #3a424b; border-radius:2px; padding:2px 8px; font-size:11px; letter-spacing:1px; font-weight:700; color:#c3ccd4; }
+  .badge.exp { border-color:#c9a227; color:#c9a227; background:rgba(201,162,39,.08); }
+  .badge.reg { border-color:#5d6670; color:#a8b2bc; background:rgba(93,102,112,.10); }
+  .metric { border-bottom:1px solid #23282d; padding:6px 0; font-size:12.5px; }
+  .metric .k { color:#7d8794; letter-spacing:.5px; }
+  .metric .v { font-weight:700; color:#dfe6ec; }
+  .v.good { color:#7fb069; } .v.warn { color:#c9a227; } .v.bad { color:#c8553d; }
+  .evbar { height:4px; background:#23282d; border-radius:0; margin-top:8px; }
+  .evbar > i { background:#c8553d; }
+
+  .arena { background:#191d21; border:1px solid #2b3138; border-radius:3px; padding:12px 10px; }
+  .arena-side { border:1px solid #2b3138; border-radius:3px; background:#161a1e; box-shadow:none; min-height:180px; }
+  .arena-side.left { border-color:#2f4f43; box-shadow:none; }
+  .arena-side.right { border-color:#4f2f2f; box-shadow:none; }
+  .arena-label { font-size:11px; letter-spacing:2px; color:#7d8794; }
+  .slot-empty { border:1px dashed #2b3138; border-radius:3px; color:#5d6670; background:transparent; }
+  .vs { font-size:19px; font-weight:800; letter-spacing:3px; color:#7d8794; text-shadow:none; }
+  .arena-center::before { background:linear-gradient(180deg, transparent, #2b3138, transparent); }
+  .arena-card:hover { box-shadow:0 0 0 1px #c9a227; transform:translateY(-3px); }
+
+  .card { border-radius:4px; box-shadow:none; border:1px solid rgba(0,0,0,.55); }
+  .card::before { display:none; }
+  .card:hover { box-shadow:0 0 0 2px #c9a227; transform:translateY(-5px); }
+  .card-name { text-shadow:none; font-size:15px; }
+  .card-cat { border-radius:2px; background:rgba(0,0,0,.32); border-color:rgba(255,255,255,.16); letter-spacing:1px; }
+  .cardback { border-radius:3px; background:#23282d; border-color:#3a424b; box-shadow:none; }
+  .arena-card.review:hover { box-shadow:0 0 0 1px #5d6670; }
+
+  #pageGame button { border-radius:3px; }
+  .btn-end { background:#c9a227; color:#1a1d20; border-radius:3px; box-shadow:none; font-weight:800; letter-spacing:3px; }
+  .btn-end:hover { background:#d8b24a; transform:none; box-shadow:none; }
+  .btn-new { border:1px solid #2b3138; background:transparent; color:#8b95a0; }
+  .btn-new:hover { background:#1f2429; color:#dfe6ec; border-color:#3a424b; }
+  .played { color:#7d8794; }
+
+  .hand-title { font-size:11px; letter-spacing:2px; color:#7d8794; font-weight:700; }
+  .midbar { color:#7d8794; font-size:12px; letter-spacing:1px; }
+  .midbar b { color:#dfe6ec; }
+  .logbox { background:#191d21; border:1px solid #2b3138; border-radius:3px; }
+  .logbox h3 { font-size:11px; letter-spacing:2px; color:#7d8794; }
+  .log p { border-bottom:1px solid #23282d; color:#8b95a0; }
+  .log .q { color:#c3ccd4; font-weight:600; }
+  .log .ai { color:#c8553d; }
+  .log .you { color:#7fb069; }
+
+  /* ===== 结算页：与卷宗风格统一 ===== */
+  #pageEnd .panel { background:#191d21; border:1px solid #2b3138; border-radius:4px; box-shadow:none; }
+  #pageEnd .panel h1 { background:none; -webkit-text-fill-color:#e8edf2; color:#e8edf2; letter-spacing:6px; }
+  #pageEnd .btn-start { background:#c9a227; color:#1a1d20; border-radius:3px; box-shadow:none; letter-spacing:3px; }
+  #pageEnd .btn-start:hover { transform:none; box-shadow:none; background:#d8b24a; }
+
   /* ===== 开始页：卷宗风格（去模板感） ===== */
   #pageStart .panel { background:#191d21; border:1px solid #2b3138; border-radius:4px; padding:32px 34px 26px; max-width:620px; text-align:left; box-shadow:none; position:relative; }
   #pageStart .panel::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#c9a227; }
@@ -155,8 +217,9 @@
   .fv { display:block; font-size:14px; color:#dfe6ec; font-weight:700; }
   #pageStart .btn-start { background:#c9a227; color:#1a1d20; border-radius:3px; box-shadow:none; font-size:15px; padding:13px 40px; letter-spacing:6px; font-weight:800; }
   #pageStart .btn-start:hover { transform:none; box-shadow:none; background:#d8b24a; }
-  #pageStart .btn-guide { background:transparent; color:#98a3af; border:1px solid #2b3138; border-radius:3px; font-size:13px; padding:9px 18px; box-shadow:none; font-weight:600; margin:0 0 18px; letter-spacing:1px; width:auto; }
-  #pageStart .btn-guide:hover { transform:none; background:#1f2429; color:#dfe6ec; border-color:#3a424b; }
+  #pageStart .btn-guide { background:transparent; color:#c9a227; border:1px solid #c9a227; border-radius:3px; font-size:13px; padding:10px 20px; box-shadow:none; font-weight:700; margin:0 0 18px; letter-spacing:2px; width:auto; display:inline-flex; align-items:center; gap:8px; }
+  #pageStart .btn-guide::after { content:'→'; font-weight:800; }
+  #pageStart .btn-guide:hover { transform:none; background:rgba(201,162,39,.12); color:#d8b24a; border-color:#d8b24a; }
   #pageStart .diff-row { justify-content:flex-start; margin:0 0 16px; }
   #pageStart .diff-btn { background:transparent; border:1px solid #2b3138; border-radius:3px; max-width:none; }
   #pageStart .diff-btn:hover { border-color:#3a424b; }
@@ -326,7 +389,7 @@
     <div class="title">许印卡牌</div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div class="role">你扮演：<b id="yourRole">—</b> ｜ 对手：AI（<span id="aiRole">—</span>）｜ 第 <b id="turnNum">1</b> / <b id="maxTurnNum">10</b> 回合</div>
-      <button class="mtop-music on" id="mtopMusic" type="button">🎵 音乐:开</button>
+      <button class="mtop-music on" id="mtopMusic" type="button">音乐 · 开</button>
     </div>
   </div>
 
@@ -378,7 +441,7 @@
   </div>
 
   <div class="actions">
-    <button class="btn-end" id="endTurnBtn">结束本回合 ▶</button>
+    <button class="btn-end" id="endTurnBtn">结束本回合</button>
     <button class="btn-new" id="surrenderBtn">投降</button>
     <span class="played" id="hint"></span>
   </div>
@@ -1293,7 +1356,7 @@ function setMusic(on){
   const btn = document.getElementById('musicToggle');
   const mtop = document.getElementById('mtopMusic');
   if(btn){ btn.textContent = on ? '开启中' : '已关闭'; btn.classList.toggle('on', on); }
-  if(mtop){ mtop.textContent = on ? '🎵 音乐:开' : '🔇 音乐:关'; mtop.classList.toggle('on', on); }
+  if(mtop){ mtop.textContent = on ? '音乐 · 开' : '音乐 · 关'; mtop.classList.toggle('on', on); }
   if(on) startBGM(); else stopBGM();
 }
 
