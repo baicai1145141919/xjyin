@@ -333,6 +333,29 @@
   .brag-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .brag-pop { animation:bragPop .5s ease; }
   @keyframes bragPop { 0%{transform:scale(1)} 30%{transform:scale(1.1) rotate(-2deg)} 100%{transform:scale(1)} }
+
+  /* ===== 结算页：卷宗风格（去模板感） ===== */
+  #pageEnd .panel { padding:34px 34px 26px; position:relative; }
+  #pageEnd .panel::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#c9a227; }
+  #pageEnd .emoji { font-size:22px; margin-bottom:10px; filter:none; }
+  #pageEnd .panel h2 { font-size:21px; letter-spacing:4px; color:#e8edf2; margin-bottom:12px; font-weight:800; }
+  #pageEnd .panel p { color:#b8c2cc; line-height:1.9; font-size:13.5px; margin-bottom:20px; }
+  #pageEnd .panel p b { color:#e8edf2; }
+  #pageEnd .end-stats { max-width:none; background:#14181b; border:1px solid #2b3138; border-radius:3px; padding:14px 16px; margin:0 0 16px; }
+  #pageEnd .end-stats h4 { font-size:11px; letter-spacing:2px; color:#7d8794; border-bottom:1px solid #23282d; padding-bottom:8px; margin-bottom:4px; font-weight:700; }
+  #pageEnd .stat-row { border-bottom:1px solid #23282d; padding:6px 0; font-size:12.5px; }
+  #pageEnd .stat-row .k { color:#7d8794; letter-spacing:.5px; }
+  #pageEnd .stat-row .v { font-weight:700; color:#dfe6ec; }
+  #pageEnd .stat-row .v.good { color:#7fb069; }
+  #pageEnd .stat-row .v.warn { color:#c9a227; }
+  #pageEnd .stat-row .v.bad { color:#c8553d; }
+  .brag-btn { margin-top:0; margin-bottom:10px; width:100%; background:transparent; color:#c9a227; border:1px solid #c9a227; border-radius:3px; padding:11px 18px; font-size:13.5px; font-weight:700; cursor:pointer; letter-spacing:2px; box-shadow:none; transition:background .12s, color .12s; }
+  .brag-btn:hover { transform:none; box-shadow:none; background:rgba(201,162,39,.12); color:#d8b24a; }
+  .brag-btn:active { transform:none; }
+  .brag-toast { background:#191d21; border:1px solid #c9a227; color:#dfe6ec; border-radius:3px; padding:11px 20px; font-size:13px; font-weight:600; }
+  /* 事件弹窗按钮同步 */
+  .event-ok { background:#c9a227; color:#1a1d20; border-radius:3px; box-shadow:none; letter-spacing:2px; font-weight:800; }
+  .event-ok:hover { transform:none; background:#d8b24a; }
 </style>
 </head>
 <body>
@@ -459,7 +482,7 @@
     <h2 id="mTitle">—</h2>
     <p id="mDesc"></p>
     <div class="end-stats" id="endStats"><h4>本局战绩复盘</h4></div>
-    <button class="brag-btn" id="bragBtn">📣 炫耀一下</button>
+    <button class="brag-btn" id="bragBtn">炫耀一下</button>
     <button class="btn-start" id="againBtn">再来一局</button>
     <button class="btn-new" id="homeBtn" style="width:100%;margin-top:10px;">返回首页</button>
   </div>
@@ -473,7 +496,7 @@
     <h2 class="event-title" id="eventTitle">事件标题</h2>
     <p class="event-desc" id="eventDesc">事件描述</p>
     <div class="event-eff" id="eventEff">影响：—</div>
-    <button class="event-ok" id="eventOk" type="button">知道了，继续 ▶</button>
+    <button class="event-ok" id="eventOk" type="button">知道了，继续</button>
   </div>
 </div>
 
@@ -1062,7 +1085,7 @@ function finalizeTurn(){
 
 // ===================== 多结局 =====================
 const ENDINGS = {
-  expPerfect:{moji:'👑',title:'帝国加冕',desc:'七回合鏖战，恒盛集团真实资产远超安全线，在监管重压之下依然稳健扩张。掌门人奠定商业帝国，堪称教科书级操盘！'},
+  expPerfect:{moji:'👑',title:'帝国加冕',desc:'十回合鏖战，恒盛集团真实资产远超安全线，在监管重压之下依然稳健扩张。掌门人奠定商业帝国，堪称教科书级操盘！'},
   expNarrow:{moji:'🏆',title:'惊险过关',desc:'终局时刻真实资产勉强越过安全线，恒盛在悬崖边续命成功。这一局，赢得惊心动魄。'},
   regCash:{moji:'💥',title:'资金链断裂',desc:'恒盛集团现金流彻底崩断，供应商挤兑、银行抽贷、理财逾期接踵而至……掌门人黯然出局。'},
   regEvidence:{moji:'⛓️',title:'追责成功',desc:'监管方层层深挖，证据链完全闭合。掌门人因违规操作被追究责任，监管大获全胜。'},
