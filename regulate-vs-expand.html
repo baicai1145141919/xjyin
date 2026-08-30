@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>监管与扩张 · 双人对抗卡牌（单人对AI）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background: radial-gradient(1200px 620px at 50% -8%, #16233b, #0f172a 62%);
+    color:#e2e8f0; padding:16px; min-height:100vh; }
+
+  .page { display:none; }
+  #pageStart.active, #pageEnd.active { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+  #pageGame.active { display:block; }
+
+  .panel { background:linear-gradient(180deg,#1e293b,#172033); border:1px solid #334155; border-radius:18px; padding:32px 36px; max-width:600px; width:100%; text-align:center; box-shadow:0 18px 60px rgba(0,0,0,.5); }
+  .panel .logo { font-size:48px; margin-bottom:6px; filter:drop-shadow(0 4px 12px rgba(56,189,248,.35)); }
+  .panel h1 { font-size:30px; letter-spacing:3px; margin-bottom:6px; color:#f8fafc;
+    background:linear-gradient(90deg,#6ee7b7,#38bdf8,#fca5a5); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .panel .tag { color:#94a3b8; font-size:14px; margin-bottom:16px; }
+  .panel .story { text-align:left; font-size:13.5px; line-height:1.7; color:#cbd5e1; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+  .panel .story b { color:#f8fafc; }
+  .panel ul { text-align:left; font-size:13px; line-height:1.8; color:#cbd5e1; margin:0 0 22px 18px; }
+  .panel ul b { color:#38bdf8; }
+  .panel .emoji { font-size:60px; margin-bottom:8px; }
+  .panel h2 { font-size:26px; margin-bottom:10px; color:#f8fafc; }
+  .panel p { color:#cbd5e1; line-height:1.7; margin-bottom:18px; font-size:14px; }
+
+  .btn-start { background:linear-gradient(180deg,#10b981,#059669); color:#fff; font-size:17px; padding:13px 40px; border-radius:10px; width:100%; border:none; cursor:pointer; font-weight:700; box-shadow:0 8px 20px rgba(5,150,105,.35); transition:transform .12s, box-shadow .12s; }
+  .btn-start:hover { transform:translateY(-2px); box-shadow:0 12px 26px rgba(5,150,105,.5); }
+  .btn-new { background:#334155; color:#e2e8f0; border:none; border-radius:8px; padding:10px 18px; font-size:14px; cursor:pointer; font-weight:600; transition:background .12s; }
+  .btn-new:hover { background:#475569; }
+
+  /* ===== 对局页 ===== */
+  .topbar { max-width:1080px; margin:0 auto 10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .topbar .title { font-size:20px; letter-spacing:2px; color:#f8fafc; font-weight:800; }
+  .topbar .role { font-size:13px; color:#94a3b8; }
+  .topbar .role b { color:#38bdf8; }
+  .badge { display:inline-block; padding:3px 9px; border-radius:6px; font-size:12px; font-weight:700; }
+  .badge.exp { background:#065f46; color:#6ee7b7; }
+  .badge.reg { background:#7f1d1d; color:#fca5a5; }
+
+  .board { max-width:1080px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:760px){ .board { grid-template-columns:1fr; } }
+  .side { background:linear-gradient(180deg,#1e293b,#16203a); border:1px solid #334155; border-radius:12px; padding:14px; }
+  .side h3 { font-size:14px; margin-bottom:10px; color:#f8fafc; display:flex; justify-content:space-between; align-items:center; }
+  .metric { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px dashed #334155; }
+  .metric .k { color:#94a3b8; }
+  .metric .v { font-weight:700; }
+  .v.good { color:#6ee7b7; } .v.warn { color:#fbbf24; } .v.bad { color:#fca5a5; }
+  .evbar { height:8px; background:#334155; border-radius:5px; overflow:hidden; margin-top:6px; }
+  .evbar > i { display:block; height:100%; background:linear-gradient(90deg,#f59e0b,#ef4444); transition:width .4s ease; }
+
+  /* ===== 中央对决舞台 ===== */
+  .arena { max-width:1080px; margin:14px auto; display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:center;
+    background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border:1px solid #2b3650; border-radius:16px; padding:14px 10px; }
+  .arena-side { border-radius:14px; padding:12px; min-height:188px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid #334155; background:rgba(255,255,255,.02); transition:box-shadow .3s; }
+  .arena-side.left { border-color:rgba(16,185,129,.45); box-shadow:inset 0 0 46px rgba(16,185,129,.08); }
+  .arena-side.right { border-color:rgba(239,68,68,.45); box-shadow:inset 0 0 46px rgba(239,68,68,.08); }
+  .arena-side.flashL { animation:flashL .5s ease; }
+  .arena-side.flashR { animation:flashR .5s ease; }
+  @keyframes flashL { 0%{box-shadow:inset 0 0 46px rgba(16,185,129,.08);} 40%{box-shadow:inset 0 0 70px rgba(16,185,129,.55);} 100%{box-shadow:inset 0 0 46px rgba(16,185,129,.08);} }
+  @keyframes flashR { 0%{box-shadow:inset 0 0 46px rgba(239,68,68,.08);} 40%{box-shadow:inset 0 0 70px rgba(239,68,68,.55);} 100%{box-shadow:inset 0 0 46px rgba(239,68,68,.08);} }
+  .arena-label { font-size:12px; color:#94a3b8; margin-bottom:12px; letter-spacing:1px; }
+  .slot { width:100%; min-height:152px; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; padding:6px; }
+  .slot-empty { color:#475569; font-size:13px; border:2px dashed #334155; border-radius:12px; padding:34px 8px; width:100%; text-align:center; }
+  .arena-card { width:128px; min-height:128px; animation:reveal .38s cubic-bezier(.2,.8,.3,1.1) both; }
+  .arena-card:hover { transform:translateY(-4px) scale(1.03); box-shadow:0 14px 26px rgba(0,0,0,.55), 0 0 0 2px #fbbf24; }
+
+  .arena-center { display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+  .arena-center::before { content:''; position:absolute; top:-10px; bottom:-10px; width:2px; left:50%; transform:translateX(-50%);
+    background:linear-gradient(180deg, transparent, rgba(148,163,184,.5), transparent); }
+  .vs { font-size:30px; font-weight:900; color:#f8fafc; text-shadow:0 0 14px rgba(0,0,0,.6); padding:6px 12px; position:relative; }
+  .vs.clash { animation:clashFlash .55s ease; }
+  @keyframes clashFlash { 0%{transform:scale(1); color:#f8fafc;} 30%{transform:scale(1.55); color:#fbbf24; text-shadow:0 0 22px #f59e0b;} 100%{transform:scale(1); color:#f8fafc;} }
+
+  .midbar { max-width:1080px; margin:10px auto; text-align:center; color:#94a3b8; font-size:13px; }
+  .midbar b { color:#f8fafc; }
+
+  /* ===== 卡牌（精致版） ===== */
+  .handwrap { max-width:1080px; margin:0 auto; }
+  .hand-title { font-size:14px; color:#cbd5e1; margin:8px 0; font-weight:600; }
+  .hand { display:flex; flex-wrap:wrap; gap:11px; min-height:150px; align-content:flex-start; }
+  .card {
+    position:relative; overflow:hidden;
+    width:138px; min-height:138px; border-radius:12px; padding:10px 9px 9px; cursor:pointer; color:#fff;
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 4px 12px rgba(0,0,0,.38);
+    display:flex; flex-direction:column;
+    transition:transform .14s ease, box-shadow .14s ease;
+    animation:cardIn .32s ease both;
+  }
+  .card::before { content:''; position:absolute; inset:0; border-radius:12px;
+    background:linear-gradient(160deg, rgba(255,255,255,.22), rgba(255,255,255,0) 46%); pointer-events:none; }
+  .card:hover { transform:translateY(-7px); box-shadow:0 14px 26px rgba(0,0,0,.55), 0 0 0 2px rgba(255,255,255,.28); }
+  .card.disabled { opacity:.38; cursor:not-allowed; filter:grayscale(.4); }
+  .card.disabled:hover { transform:none; box-shadow:0 4px 12px rgba(0,0,0,.38); }
+  .card.fly { animation:none !important; z-index:9999; box-shadow:0 18px 40px rgba(0,0,0,.6); }
+  .card.reveal { animation:reveal .38s cubic-bezier(.2,.8,.3,1.1) both; }
+  @keyframes cardIn { from{opacity:0; transform:translateY(16px) scale(.95);} to{opacity:1; transform:none;} }
+  @keyframes reveal { 0%{opacity:0; transform:scale(.66) rotate(-7deg);} 60%{transform:scale(1.08) rotate(2deg);} 100%{opacity:1; transform:none;} }
+  .card-top { display:flex; align-items:center; }
+  .card-cat { font-size:11px; font-weight:700; letter-spacing:.5px; opacity:.95;
+    background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.25); padding:2px 7px; border-radius:20px; }
+  .card-name { font-size:16px; font-weight:800; margin:8px 0 6px; letter-spacing:1px; text-shadow:0 1px 2px rgba(0,0,0,.4); }
+  .card-div { height:1px; background:rgba(255,255,255,.28); margin:2px 0 7px; }
+  .card-eff { font-size:11px; line-height:1.45; opacity:.96; }
+  /* 类别配色（12类） */
+  .card.expand { background:linear-gradient(160deg,#10b981,#065f46); }
+  .card.operate { background:linear-gradient(160deg,#3b82f6,#1e40af); }
+  .card.buffer { background:linear-gradient(160deg,#8b5cf6,#6d28d9); }
+  .card.finance { background:linear-gradient(160deg,#fbbf24,#b45309); }
+  .card.pr { background:linear-gradient(160deg,#ec4899,#be185d); }
+  .card.strategy { background:linear-gradient(160deg,#14b8a6,#0f766e); }
+  .card.policy { background:linear-gradient(160deg,#f59e0b,#b45309); }
+  .card.investigate { background:linear-gradient(160deg,#ef4444,#991b1b); }
+  .card.market { background:linear-gradient(160deg,#64748b,#334155); }
+  .card.judicial { background:linear-gradient(160deg,#b91c1c,#7f1d1d); }
+  .card.media { background:linear-gradient(160deg,#a16207,#78350f); }
+  .card.macro { background:linear-gradient(160deg,#6366f1,#3730a3); }
+
+  .cardback { width:64px; height:92px; border-radius:9px; background:linear-gradient(135deg,#334155,#475569); border:1px solid #64748b; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px; box-shadow:0 3px 8px rgba(0,0,0,.3); }
+  .aipile { display:flex; gap:6px; flex-wrap:wrap; min-height:92px; align-items:center; }
+
+  /* 上一回合出牌（留在出牌框内作参考，淡化显示） */
+  .arena-card.review { opacity:.58; filter:grayscale(.3); }
+  .arena-card.review:hover { transform:none; box-shadow:0 4px 12px rgba(0,0,0,.38), 0 0 0 2px rgba(148,163,184,.4); }
+
+  .actions { max-width:1080px; margin:14px auto 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  button { font-size:14px; padding:10px 18px; border:none; border-radius:8px; cursor:pointer; font-weight:600; }
+  .btn-end { background:linear-gradient(180deg,#3b82f6,#2563eb); color:#fff; box-shadow:0 6px 16px rgba(37,99,235,.35); transition:transform .12s, box-shadow .12s; }
+  .btn-end:hover { transform:translateY(-2px); box-shadow:0 10px 22px rgba(37,99,235,.5); }
+  .btn-end:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+  .played { color:#94a3b8; font-size:13px; }
+
+  .logbox { max-width:1080px; margin:12px auto 0; background:#1e293b; border:1px solid #334155; border-radius:10px; padding:12px; max-height:200px; overflow-y:auto; }
+  .logbox h3 { font-size:13px; margin-bottom:6px; color:#cbd5e1; }
+  .log p { font-size:12px; line-height:1.55; color:#94a3b8; border-bottom:1px dashed #334155; padding:3px 0; }
+  .log .q { color:#38bdf8; font-weight:600; }
+  .log .ai { color:#fca5a5; }
+  .log .you { color:#6ee7b7; }
+
+  /* ===== 开始页：难度 / 指导 / 音乐 ===== */
+  .diff-row { display:flex; gap:10px; justify-content:center; margin:18px 0 4px; }
+  .diff-btn { flex:1; max-width:160px; background:#0f172a; border:1px solid #334155; color:#cbd5e1; border-radius:10px; padding:11px 8px; cursor:pointer; font-weight:600; transition:all .15s; }
+  .diff-btn .dl { font-size:15px; display:block; }
+  .diff-btn .dd { font-size:11px; color:#94a3b8; margin-top:4px; display:block; }
+  .diff-btn:hover { border-color:#475569; }
+  .diff-btn.sel { border-color:#38bdf8; color:#f8fafc; background:rgba(56,189,248,.12); box-shadow:0 0 0 1px #38bdf8; }
+  .diff-btn.sel .dd { color:#bae6fd; }
+
+  .music-row { display:flex; align-items:center; justify-content:center; gap:12px; margin:4px 0 18px; font-size:13px; color:#94a3b8; }
+  .music-toggle { background:#0f172a; border:1px solid #334155; color:#cbd5e1; border-radius:20px; padding:7px 18px; cursor:pointer; font-weight:600; font-size:13px; transition:all .15s; }
+  .music-toggle.on { border-color:#10b981; color:#6ee7b7; background:rgba(16,185,129,.12); }
+  .music-pick { background:#0f172a; border:1px solid #334155; color:#cbd5e1; border-radius:20px; padding:7px 14px; cursor:pointer; font-weight:600; font-size:13px; transition:all .15s; }
+  .music-pick:hover { border-color:#475569; color:#f8fafc; }
+
+  .guide { text-align:left; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:0; margin:0 0 16px; overflow:hidden; }
+  .guide summary { cursor:pointer; padding:12px 16px; font-weight:700; color:#f8fafc; font-size:14px; list-style:none; user-select:none; }
+  .guide summary::-webkit-details-marker { display:none; }
+  .guide summary::before { content:'📖 '; }
+  .guide .gbody { padding:0 16px 14px; font-size:13px; line-height:1.75; color:#cbd5e1; }
+  .guide .gbody h4 { color:#38bdf8; font-size:13px; margin:12px 0 4px; }
+  .guide .gbody b { color:#f8fafc; }
+  .guide .gbody .dim { color:#94a3b8; }
+
+  /* 对局页右上角音乐按钮 */
+  .mtop-music { background:#334155; color:#e2e8f0; border:none; border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:600; transition:color .15s; }
+  .mtop-music.on { color:#6ee7b7; }
+
+  /* ===== 新手指导独立页 ===== */
+  #pageGuide.active { display:block; }
+  .guide-page { max-width:1000px; margin:0 auto; padding:18px 16px 60px; }
+  .g-top { display:flex; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .g-title { font-size:22px; font-weight:800; color:#f8fafc; letter-spacing:1px; }
+  .g-content { background:#1e293b; border:1px solid #334155; border-radius:14px; padding:20px 24px; }
+  .g-content h3 { color:#f8fafc; font-size:20px; margin:24px 0 12px; border-bottom:1px solid #334155; padding-bottom:8px; }
+  .g-content h4 { color:#38bdf8; font-size:15px; margin:18px 0 6px; }
+  .g-content h5 { color:#e2e8f0; font-size:14px; margin:14px 0 8px; }
+  .g-content p { color:#cbd5e1; line-height:1.8; font-size:13.5px; margin-bottom:4px; }
+  .g-content p.dim, .g-content .dim { color:#94a3b8; }
+  .g-content b { color:#f8fafc; }
+  .gcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+  .gcard { border-radius:10px; padding:9px 11px; border:1px solid rgba(255,255,255,.16); color:#fff; }
+  .gcard .gn { font-size:13.5px; font-weight:800; margin-bottom:3px; }
+  .gcard .gd { font-size:11px; line-height:1.5; opacity:.95; }
+  .gcard.expand { background:linear-gradient(160deg,#10b981,#065f46); }
+  .gcard.operate { background:linear-gradient(160deg,#3b82f6,#1e40af); }
+  .gcard.buffer { background:linear-gradient(160deg,#8b5cf6,#6d28d9); }
+  .gcard.finance { background:linear-gradient(160deg,#fbbf24,#b45309); }
+  .gcard.pr { background:linear-gradient(160deg,#ec4899,#be185d); }
+  .gcard.strategy { background:linear-gradient(160deg,#14b8a6,#0f766e); }
+  .gcard.policy { background:linear-gradient(160deg,#f59e0b,#b45309); }
+  .gcard.investigate { background:linear-gradient(160deg,#ef4444,#991b1b); }
+  .gcard.market { background:linear-gradient(160deg,#64748b,#334155); }
+  .gcard.judicial { background:linear-gradient(160deg,#b91c1c,#7f1d1d); }
+  .gcard.media { background:linear-gradient(160deg,#a16207,#78350f); }
+  .gcard.macro { background:linear-gradient(160deg,#6366f1,#3730a3); }
+  .btn-guide { background:linear-gradient(180deg,#6366f1,#4338ca); color:#fff; border:none; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:700; cursor:pointer; width:100%; margin:6px 0 16px; box-shadow:0 6px 16px rgba(67,56,202,.35); transition:transform .12s; }
+  .btn-guide:hover { transform:translateY(-2px); }
+
+  /* ============ 回合意外事件弹窗 ============ */
+  .event-overlay { position:fixed; inset:0; background:rgba(6,8,20,.74); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:90; padding:20px; }
+  .event-overlay.show { display:flex; animation:evFade .25s ease; }
+  @keyframes evFade { from{opacity:0} to{opacity:1} }
+  .event-box { width:min(440px,92vw); background:linear-gradient(165deg,#1b1f3a,#0e1130);
+    border:1px solid rgba(248,197,57,.5); border-radius:18px; padding:26px 26px 22px; text-align:center;
+    box-shadow:0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(248,197,57,.15) inset;
+    transform:translateY(8px) scale(.97); animation:evPop .28s cubic-bezier(.2,.8,.3,1) forwards; }
+  @keyframes evPop { to{transform:translateY(0) scale(1)} }
+  .event-banner { display:inline-block; font-size:12px; letter-spacing:1.5px; font-weight:700;
+    color:#0e1130; background:linear-gradient(90deg,#f8c539,#f59e0b); padding:4px 14px; border-radius:999px; margin-bottom:14px; }
+  .event-icon { font-size:54px; line-height:1; margin:2px 0 10px; filter:drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+  .event-title { font-size:23px; font-weight:800; color:#fde68a; margin:0 0 12px; letter-spacing:1px; }
+  .event-desc { font-size:14px; line-height:1.7; color:#cbd5e1; margin:0 0 16px; }
+  .event-eff { font-size:13.5px; font-weight:700; color:#fca5a5; background:rgba(239,68,68,.1);
+    border:1px solid rgba(239,68,68,.3); border-radius:10px; padding:10px 12px; margin:0 0 20px; }
+  .event-ok { background:linear-gradient(180deg,#f8c539,#eab308); color:#1a1205; border:none; border-radius:11px;
+    padding:12px 26px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 8px 20px rgba(234,179,8,.4);
+    transition:transform .12s; }
+  .event-ok:hover { transform:translateY(-2px); }
+
+  /* 结算战绩面板 & 炫耀按钮 */
+  .end-stats { width:100%; max-width:420px; margin:14px auto 2px; text-align:left; background:#0f172a; border:1px solid #334155; border-radius:12px; padding:14px 16px; box-sizing:border-box; }
+  .end-stats h4 { margin:0 0 10px; font-size:13px; color:#94a3b8; letter-spacing:1px; border-bottom:1px solid #1e293b; padding-bottom:8px; }
+  .stat-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px dashed #1e293b; font-size:14px; }
+  .stat-row:last-child { border-bottom:none; }
+  .stat-row .k { color:#94a3b8; }
+  .stat-row .v { font-weight:700; }
+  .brag-btn { margin-top:14px; width:100%; background:linear-gradient(90deg,#f59e0b,#ef4444); color:#fff; border:none; border-radius:10px; padding:13px 18px; font-size:15px; font-weight:800; cursor:pointer; letter-spacing:1px; transition:transform .12s, box-shadow .12s; box-shadow:0 8px 20px rgba(245,158,11,.35); }
+  .brag-btn:hover { transform:translateY(-2px); box-shadow:0 12px 26px rgba(245,158,11,.5); }
+  .brag-btn:active { transform:scale(.97); }
+  .brag-toast { position:fixed; left:50%; bottom:38px; transform:translateX(-50%) translateY(20px); background:#0f172a; border:1px solid #34d399; color:#e2e8f0; padding:12px 22px; border-radius:30px; font-size:14px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:60; }
+  .brag-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .brag-pop { animation:bragPop .5s ease; }
+  @keyframes bragPop { 0%{transform:scale(1)} 30%{transform:scale(1.1) rotate(-2deg)} 100%{transform:scale(1)} }
+</style>
+</head>
+<body>
+
+<!-- ========== 开始页 ========== -->
+<div class="page active" id="pageStart">
+  <div class="panel">
+    <div class="logo">⚖️</div>
+    <h1>监管与扩张</h1>
+    <div class="tag">双阵营经济博弈卡牌 · 单人对 AI（架空题材）</div>
+    <div class="story">
+      一家靠高杠杆狂奔的地产巨头 <b>恒盛集团</b>，与维护市场秩序的 <b>监管方</b> 展开 10 个回合的攻防。
+      你将在开局<b>抽签</b>决定扮演哪一方——掌门人或监管者，另一方由 AI 接管。<br><br>
+      掌门人明暗双线运作：<b>公开财报</b>用来撑门面，<b>真实负债</b>才是致命隐患；监管方则靠调查堆叠证据、靠市场与宏观手段抽紧现金。
+      每回合还有<b>市场风声</b>随机搅动局势；更关键的是，<b>第 3 回合与第 5 回合会触发随机「意外事件」</b>——每局从事件池中抽取一种（如理财兑付危机、合作银行抽贷、突击现场审计等），并在回合开始时<b>弹窗告知</b>你发生了什么、影响了哪些指标。
+    </div>
+    <ul>
+      <li><b>抽签选边</b>：开局随机分配你扮演扩张方或监管方，对手为 AI。</li>
+      <li><b>明暗双线</b>：扩张方有公开净资产与真实净资产两套账。</li>
+      <li><b>证据堆叠</b>：监管方调查/司法/舆情卡累积证据值，达阈值即追责成功。</li>
+      <li><b>双重转折</b>：第3回合与第5回合会触发随机「意外事件」（每局抽取其一，回合开始弹窗预告），如理财兑付危机、合作银行抽贷、突击现场审计、流动性冻结等，直接改写现金、负债与证据局势。</li>
+      <li><b>五种结局</b>：帝国加冕 / 惊险过关 / 资金链断裂 / 追责成功 / 规模虚胖。</li>
+      <li><b>胜负</b>：扩张方需在 10 回合后真实资产 &gt; 真实负债 ×1.2 倍且未被追责；监管方使现金断裂或证据满阈值即胜。</li>
+    </ul>
+
+    <button class="btn-guide" id="guideBtn" type="button">📖 查看完整新手指导（含全部卡牌说明）</button>
+
+    <div class="diff-row" id="diffRow">
+      <button class="diff-btn" data-diff="easy"><span class="dl">新手</span><span class="dd">AI 较弱 · 容错高</span></button>
+      <button class="diff-btn sel" data-diff="normal"><span class="dl">普通</span><span class="dd">标准平衡</span></button>
+      <button class="diff-btn" data-diff="hard"><span class="dl">困难</span><span class="dd">AI 强势 · 容错低</span></button>
+    </div>
+
+    <div class="music-row">
+      <span>🎵 背景音乐《朋友的酒》</span>
+      <button class="music-toggle on" id="musicToggle" type="button">开启中</button>
+      <button class="music-pick" id="musicPick" type="button" title="选择本地《朋友的酒》音频文件（原曲）">📁 选原曲</button>
+      <input type="file" id="musicFile" accept="audio/*" style="display:none">
+    </div>
+
+    <button class="btn-start" id="drawBtn">抽签开局 ▶</button>
+  </div>
+</div>
+
+<!-- ========== 新手指导独立页 ========== -->
+<div class="page" id="pageGuide">
+  <div class="guide-page">
+    <div class="g-top">
+      <button class="btn-new" id="guideBackBtn" type="button">← 返回开始页</button>
+      <div class="g-title">📖 新手指导 · 完整手册</div>
+    </div>
+    <div class="g-content">
+      <h4>① 你扮演谁？</h4>
+      <p>开局<b>抽签</b>随机分配你为 <b>扩张方（恒盛集团掌门人）</b> 或 <b>监管方（市场秩序维护者）</b>，另一方由 AI 接管。两种身份目标完全不同。</p>
+      <h4>② 你的目标</h4>
+      <p>· <b>扩张方</b>：10 回合后，让 <b>真实资产 ≥ 真实负债 ×1.2</b> 倍，且不被追责（证据未满阈值）即过关。<br>
+         · <b>监管方</b>：让恒盛 <b>现金跌破 0</b>，或把 <b>证据值堆到阈值</b>，即判定问责成功。</p>
+      <h4>③ 怎么操作</h4>
+      <p>每回合你可从手牌 <b>打出最多 2 张</b>（点击即出；点中央已出的牌可<b>收回</b>重打），然后点 <b>「结束本回合」</b>。AI 随后一张张慢慢出牌。你这回合还没出牌时，出牌框里会保留 <b>上一回合双方出的牌</b> 供你参考。</p>
+      <p style="color:#fbbf24">⚔️ 难度越高，对手（AI）每回合能打出的牌越多：<b>新手 2 张 / 普通 3 张 / 困难 4 张</b>。困难模式下 AI 不论扮演哪一方都强化到同一强度：当 AI 是<b>监管</b>时证据仅需 <b>18</b> 即触发「暴雷」追责；当 AI 是<b>扩张</b>时证据线高达 <b>42</b>、终局安全线仅 <b>1.10</b>，玩家几乎无从下手。</p>
+      <h4>④ 看板指标</h4>
+      <p><b>现金</b>（监管方最该盯，归零即胜）、<b>公开净资产</b>（明面门面）、<b>真实净资产 / 安全线</b>（仅扩张方可见，监管方显示 ??? 隐藏）、<b>真实负债率</b>、<b>证据值</b>进度条、<b>隐性债务隐患</b>（仅扩张方可见，由标记"埋雷"的卡累积，第3回合理财兑付危机或终局时计入真实负债）。</p>
+      <h4>⑤ 实用技巧</h4>
+      <p><span class="dim">监管方</span>：多用「调查 / 司法 / 舆情」堆证据、「市场 / 宏观 / 政策」抽现金。<br>
+         <span class="dim">扩张方</span>：用「金融」回血、「扩张 / 战略」做大规模，必要时「缓冲 / 公关」削减证据；但要警惕带 <b>⚠️埋雷</b> 的财技牌——它们短期美化或回血，却埋下隐性债务，迟早计入真实负债。</p>
+
+      <h3>🃏 卡牌图鉴（全部卡牌功能）</h3>
+      <p class="dim">扩张方共 6 大类、监管方共 6 大类。带 <b>⚠️埋雷</b> 的扩张方卡会埋下隐性债务，在第3回合（无论抽到哪种危机事件）或终局时计入真实负债。</p>
+      <h4>扩张方 · 恒盛集团</h4>
+      <div id="expGuide"></div>
+      <h4>监管方</h4>
+      <div id="regGuide"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 对局页 ========== -->
+<div class="page" id="pageGame">
+  <div class="topbar">
+    <div class="title">监管与扩张</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div class="role">你扮演：<b id="yourRole">—</b> ｜ 对手：AI（<span id="aiRole">—</span>）｜ 第 <b id="turnNum">1</b> / <b id="maxTurnNum">10</b> 回合</div>
+      <button class="mtop-music on" id="mtopMusic" type="button">🎵 音乐:开</button>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="side">
+      <h3><span class="badge exp">扩张方 · 恒盛集团</span></h3>
+      <div class="metric"><span class="k">现金</span><span class="v" id="m_cash">—</span></div>
+      <div class="metric"><span class="k">公开净资产</span><span class="v" id="m_pub">—</span></div>
+      <div class="metric"><span class="k">真实净资产</span><span class="v" id="m_real">—</span></div>
+      <div class="metric"><span class="k">真实负债率</span><span class="v" id="m_lev">—</span></div>
+      <div class="metric"><span class="k">安全线达标</span><span class="v" id="m_safe">—</span></div>
+      <div class="metric"><span class="k">隐性债务隐患</span><span class="v" id="m_hd">—</span></div>
+      <div class="evbar" style="margin-top:4px"><i id="safebar" style="width:0%"></i></div>
+    </div>
+    <div class="side">
+      <h3><span class="badge reg">监管方</span></h3>
+      <div class="metric"><span class="k">证据值</span><span class="v" id="m_ev">0 / 18</span></div>
+      <div class="evbar"><i id="evbar" style="width:0%"></i></div>
+      <div class="metric" style="margin-top:8px"><span class="k">调查倍率</span><span class="v" id="m_dbl">×1</span></div>
+      <div class="metric"><span class="k">状态</span><span class="v" id="m_mod">正常</span></div>
+    </div>
+  </div>
+
+  <!-- 中央对决舞台 -->
+  <div class="arena">
+    <div class="arena-side left" id="arenaExp">
+      <div class="arena-label">扩张方 · 出牌</div>
+      <div class="slot" id="slotExp"><div class="slot-empty">待出牌</div></div>
+    </div>
+    <div class="arena-center">
+      <div class="vs" id="vsBadge">VS</div>
+    </div>
+    <div class="arena-side right" id="arenaReg">
+      <div class="arena-label">监管方 · 出牌</div>
+      <div class="slot" id="slotReg"><div class="slot-empty">待出牌</div></div>
+    </div>
+  </div>
+
+  <div class="midbar">本回合你已出牌 <b id="playedNum">0</b> / 2 张</div>
+
+  <div class="handwrap">
+    <div class="hand-title" id="yourHandTitle">你的手牌（点击打出）</div>
+    <div class="hand" id="hand"></div>
+  </div>
+
+  <div class="handwrap">
+    <div class="hand-title" id="aiHandTitle">AI 手牌（背面，不可见）</div>
+    <div class="aipile" id="aipile"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-end" id="endTurnBtn">结束本回合 ▶</button>
+    <button class="btn-new" id="surrenderBtn">投降</button>
+    <span class="played" id="hint"></span>
+  </div>
+
+  <div class="logbox">
+    <h3>战况日志</h3>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<!-- ========== 结算页 ========== -->
+<div class="page" id="pageEnd">
+  <div class="panel">
+    <div class="emoji" id="moji">💥</div>
+    <h2 id="mTitle">—</h2>
+    <p id="mDesc"></p>
+    <div class="end-stats" id="endStats"><h4>本局战绩复盘</h4></div>
+    <button class="brag-btn" id="bragBtn">📣 炫耀一下</button>
+    <button class="btn-start" id="againBtn">再来一局</button>
+    <button class="btn-new" id="homeBtn" style="width:100%;margin-top:10px;">返回首页</button>
+  </div>
+</div>
+
+<!-- ========== 回合意外事件弹窗 ========== -->
+<div class="event-overlay" id="eventOverlay">
+  <div class="event-box">
+    <div class="event-banner" id="eventTurn">第 3 回合 · 突发意外事件</div>
+    <div class="event-icon" id="eventIcon">⚠️</div>
+    <h2 class="event-title" id="eventTitle">事件标题</h2>
+    <p class="event-desc" id="eventDesc">事件描述</p>
+    <div class="event-eff" id="eventEff">影响：—</div>
+    <button class="event-ok" id="eventOk" type="button">知道了，继续 ▶</button>
+  </div>
+</div>
+
+<script>
+// ===================== 全局常量 =====================
+const MAX_TURN = 10;       // 回合数
+let SAFE_RATIO = 1.26;      // 扩张方过关所需 真实资产/真实负债（10回合制下经模拟平衡；随难度动态调整）
+let EV_THRESHOLD = 26;      // 监管方证据满阈值（10回合制下经模拟平衡；随难度动态调整）
+const AI_STEP_DELAY = 800;  // AI 每张牌之间的停顿（毫秒），让玩家看清每一步
+let AI_PLAY_LIMIT = 2;       // AI（对方）每回合出牌上限：随难度 新手2/普通3/困难4
+
+// 难度配置：随机分配身份后，对「玩家自身胜利条件」放宽、对「AI 胜利条件」收紧
+const DIFFICULTY = {
+  easy:   { label:'新手', aiRandom:0.40 },
+  normal: { label:'普通', aiRandom:0.10 },
+  hard:   { label:'困难', aiRandom:0.00 },
+};
+let chosenDifficulty = 'normal';   // 玩家在开始界面选择的难度
+
+// 根据玩家身份应用难度：让玩家的胜利条件更宽松、AI 的更苛刻
+function applyDifficulty(){
+  const exp = state.playerSide==='exp';
+  if(chosenDifficulty==='easy'){
+    AI_PLAY_LIMIT = 2;
+    if(exp){ SAFE_RATIO = 1.15; EV_THRESHOLD = 42; }   // 玩家=扩张：自身易过关、AI监管难追责（安全线须>1.143，否则不出牌也能赢）
+    else   { EV_THRESHOLD = 20; SAFE_RATIO = 1.45; }   // 玩家=监管：自身易追责、AI扩张难过关
+  } else if(chosenDifficulty==='hard'){
+    AI_PLAY_LIMIT = 4;
+    if(exp){ SAFE_RATIO = 1.28; EV_THRESHOLD = 18; }   // 玩家=扩张：证据18即暴雷（更易被追责）；AI每回合出4张
+    else   { EV_THRESHOLD = 42; SAFE_RATIO = 1.10; }   // 玩家=监管：AI扩张同样强化到同等难度（证据线42，玩家几乎无法追责；AI每回合出4张、终局安全线仅1.10）
+  } else {
+    AI_PLAY_LIMIT = 3;
+    EV_THRESHOLD = 26;                                 // 普通取中：EV 26 恰在 简单42 与 困难15 之间
+    if(exp){ SAFE_RATIO = 1.16; }                      // 扩张侧放宽到1.16（须>1.143，否则不出牌也能赢）
+    else   { SAFE_RATIO = 1.24; }                      // 监管侧收紧到1.24（AI扩张难过关）
+  }
+  state.aiRandom = DIFFICULTY[chosenDifficulty].aiRandom;
+}
+
+// ===================== 卡牌池（全部虚构） =====================
+// eff 字段：cash 现金, ra 真实资产, rd 真实负债, pa 公开资产, pd 公开负债, ev 证据值
+const EXP_CARDS = [
+  // —— 扩张 expand 🏗 ——
+  {cat:'expand', name:'拿地', desc:'企业现金减少100万，真实资产增加260万，真实负债增加180万，公开净资产增加260万', eff:{ra:260,pa:260,rd:180,cash:-100}},
+  {cat:'expand', name:'并购', desc:'企业现金减少150万，真实资产增加360万，真实负债增加300万，公开净资产增加300万', eff:{ra:360,pa:300,rd:300,cash:-150}},
+  {cat:'expand', name:'多元化布局', desc:'企业现金减少50万，真实资产增加220万，真实负债增加150万，公开净资产增加220万', eff:{ra:220,pa:220,rd:150,cash:-50}},
+  {cat:'expand', name:'广告营销', desc:'企业现金减少120万，公开净资产增加180万', eff:{pa:180,cash:-120}},
+  {cat:'expand', name:'新区域开盘', desc:'企业现金减少80万，真实资产增加240万，真实负债增加160万，公开净资产增加240万', eff:{ra:240,pa:240,rd:160,cash:-80}},
+  {cat:'expand', name:'文旅项目', desc:'企业现金减少100万，真实资产增加300万，真实负债增加260万，公开净资产增加280万', eff:{ra:300,pa:280,rd:260,cash:-100}},
+  {cat:'expand', name:'物业分拆上市', desc:'企业现金增加100万，公开净资产增加320万', eff:{pa:320,cash:100}},
+  {cat:'expand', name:'战略合作', desc:'真实资产增加200万，真实负债增加80万，公开净资产增加200万', eff:{ra:200,pa:200,rd:80}},
+  {cat:'expand', name:'地王拿地', desc:'企业现金减少200万，真实资产增加400万，真实负债增加350万，公开净资产增加400万', eff:{ra:400,pa:400,rd:350,cash:-200}},
+  {cat:'expand', name:'代建输出', desc:'企业现金增加50万，真实资产增加150万，公开净资产增加120万', eff:{ra:150,pa:120,cash:50}},
+  {cat:'expand', name:'城市更新', desc:'企业现金减少100万，真实资产增加260万，真实负债增加200万，公开净资产增加260万', eff:{ra:260,pa:260,rd:200,cash:-100}},
+  {cat:'expand', name:'物流地产', desc:'真实资产增加200万，真实负债增加140万，公开净资产增加200万', eff:{ra:200,pa:200,rd:140}},
+  {cat:'expand', name:'收并购基金', desc:'真实资产增加240万，真实负债增加200万，公开净资产增加220万', eff:{ra:240,pa:220,rd:200}},
+  {cat:'expand', name:'海外扩张', desc:'企业现金减少150万，真实资产增加300万，真实负债增加300万，公开净资产增加260万', eff:{ra:300,pa:260,rd:300,cash:-150}},
+  {cat:'expand', name:'金融牌照', desc:'真实负债增加100万，公开净资产增加200万', eff:{pa:200,rd:100}},
+  // —— 操作 operate 🔧 ——
+  {cat:'operate', name:'财技操作', desc:'公开负债减少150万', eff:{pd:-150}},
+  {cat:'operate', name:'表外负债', desc:'公开负债减少150万，但埋下隐性债务260万（第3回合理财兑付危机或终局时计入真实负债）', eff:{pd:-150, hd:260}},
+  {cat:'operate', name:'关联交易', desc:'真实资产增加200万，真实负债增加120万，公开净资产增加200万', eff:{ra:200,pa:200,rd:120}},
+  {cat:'operate', name:'股息分红', desc:'企业现金增加220万，真实负债增加60万，公开净资产增加120万', eff:{cash:220,pa:120,rd:60}},
+  {cat:'operate', name:'永续债', desc:'真实负债增加200万，公开负债减少100万', eff:{pd:-100,rd:200}},
+  {cat:'operate', name:'明股实债', desc:'公开净资产增加220万，但埋下隐性债务220万（第3回合理财兑付危机或终局时计入真实负债）', eff:{pa:220, hd:220}},
+  {cat:'operate', name:'应收账款出表', desc:'公开净资产增加100万，公开负债减少80万', eff:{pa:100,pd:-80}},
+  {cat:'operate', name:'资产腾挪', desc:'真实资产增加150万，真实负债增加50万，公开净资产增加150万', eff:{ra:150,pa:150,rd:50}},
+  {cat:'operate', name:'利润调节', desc:'公开净资产增加120万', eff:{pa:120}},
+  {cat:'operate', name:'抽屉协议', desc:'公开净资产增加120万，但埋下隐性债务180万（第3回合理财兑付危机或终局时计入真实负债）', eff:{pa:120, hd:180}},
+  {cat:'operate', name:'供应链金融', desc:'企业现金增加200万，但埋下隐性债务150万（第3回合理财兑付危机或终局时计入真实负债）', eff:{cash:200, hd:150}},
+  {cat:'operate', name:'债转股', desc:'真实负债减少150万，公开负债减少120万，真实资产减少50万', eff:{rd:-150, pd:-120, ra:-50}},
+  {cat:'operate', name:'资产注入', desc:'真实资产增加280万，真实负债增加120万，公开净资产增加280万', eff:{ra:280,pa:280,rd:120}},
+  // —— 缓冲 buffer 🛡 ——
+  {cat:'buffer', name:'政绩工程', desc:'公开净资产增加150万', eff:{pa:150}},
+  {cat:'buffer', name:'公益捐赠', desc:'企业现金减少100万，监管证据值减少2', eff:{cash:-100,ev:-2}},
+  {cat:'buffer', name:'就业贡献', desc:'公开净资产增加100万', eff:{pa:100}},
+  {cat:'buffer', name:'税收大户', desc:'公开净资产增加100万', eff:{pa:100}},
+  {cat:'buffer', name:'行业峰会', desc:'公开净资产增加80万', eff:{pa:80}},
+  {cat:'buffer', name:'央媒报道', desc:'公开净资产增加120万', eff:{pa:120}},
+  {cat:'buffer', name:'战略合作签约', desc:'公开净资产增加100万', eff:{pa:100}},
+  {cat:'buffer', name:'扶贫攻坚', desc:'企业现金减少80万，监管证据值减少2', eff:{cash:-80,ev:-2}},
+  {cat:'buffer', name:'稳就业表态', desc:'公开净资产增加90万', eff:{pa:90}},
+  {cat:'buffer', name:'社会责任报告', desc:'公开净资产增加80万，监管证据值减少2', eff:{pa:80,ev:-2}},
+  // —— 金融 finance 💰 ——
+  {cat:'finance', name:'发行美元债', desc:'企业现金增加400万，真实负债增加300万', eff:{cash:400,rd:300}},
+  {cat:'finance', name:'境内公司债', desc:'企业现金增加300万，真实负债增加200万，公开负债增加100万', eff:{cash:300,rd:200,pd:100}},
+  {cat:'finance', name:'供应链ABS', desc:'企业现金增加200万，真实负债增加120万', eff:{cash:200,rd:120}},
+  {cat:'finance', name:'信托输血', desc:'企业现金增加250万，真实负债增加220万', eff:{cash:250,rd:220}},
+  {cat:'finance', name:'配股融资', desc:'企业现金增加300万，真实负债增加50万，公开净资产增加150万', eff:{cash:300,pa:150,rd:50}},
+  {cat:'finance', name:'商票贴现', desc:'企业现金增加150万，真实负债增加100万', eff:{cash:150,rd:100}},
+  {cat:'finance', name:'海外发债', desc:'企业现金增加350万，真实负债增加280万', eff:{cash:350,rd:280}},
+  {cat:'finance', name:'可转债筹资', desc:'企业现金增加220万，真实负债增加120万，公开净资产增加80万', eff:{cash:220,rd:120,pa:80}},
+  // —— 公关 pr 📣 ——
+  {cat:'pr', name:'正面宣发', desc:'公开净资产增加120万', eff:{pa:120}},
+  {cat:'pr', name:'危机公关', desc:'企业现金减少50万，监管证据值减少1', eff:{cash:-50,ev:-1}},
+  {cat:'pr', name:'大咖站台', desc:'公开净资产增加100万', eff:{pa:100}},
+  {cat:'pr', name:'公益冠名', desc:'公开净资产增加120万，监管证据值减少1', eff:{pa:120,ev:-1}},
+  {cat:'pr', name:'舆情引导', desc:'监管证据值减少1', eff:{ev:-1}},
+  {cat:'pr', name:'品牌升级', desc:'公开净资产增加100万', eff:{pa:100}},
+  {cat:'pr', name:'媒体开放日', desc:'公开净资产增加80万，监管证据值减少1', eff:{pa:80,ev:-1}},
+  {cat:'pr', name:'高管增持', desc:'企业现金减少50万，公开净资产增加100万', eff:{pa:100,cash:-50}},
+  // —— 战略 strategy 🎯 ——
+  {cat:'strategy', name:'分拆物业', desc:'真实资产增加100万，公开净资产增加200万', eff:{pa:200,ra:100}},
+  {cat:'strategy', name:'引入战投', desc:'真实资产增加250万，真实负债增加100万，公开净资产增加150万', eff:{ra:250,pa:150,rd:100}},
+  {cat:'strategy', name:'轻资产转型', desc:'真实资产增加150万，真实负债减少100万', eff:{ra:150,rd:-100}},
+  {cat:'strategy', name:'退出非主业', desc:'真实资产增加200万，真实负债减少150万', eff:{ra:200,rd:-150}},
+  {cat:'strategy', name:'海外资产处置', desc:'企业现金增加200万，真实资产减少50万', eff:{cash:200,ra:-50}},
+  {cat:'strategy', name:'产城融合', desc:'真实资产增加220万，真实负债增加160万', eff:{ra:220,rd:160}},
+  {cat:'strategy', name:'数字化转型', desc:'真实资产增加120万，真实负债增加40万', eff:{ra:120,rd:40}},
+  {cat:'strategy', name:'战略合作升级', desc:'真实资产增加180万，真实负债增加80万，公开净资产增加120万', eff:{ra:180,pa:120,rd:80}},
+];
+const REG_CARDS = [
+  // —— 政策 policy 📜 ——
+  {cat:'policy', name:'三道管控线', desc:'若恒盛公开负债高于500万，则额外现金减少200万，且扩张方扩张效果降至60%', eff:{}, special:'redLines'},
+  {cat:'policy', name:'限购限贷', desc:'企业现金减少150万；扩张方扩张效果降至70%', eff:{cash:-150}, special:'limitExpand'},
+  {cat:'policy', name:'融资新规', desc:'触发融资新规——此后每个回合真实负债增加100万', eff:{}, special:'debtInterest'},
+  {cat:'policy', name:'预售资金监管', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'policy', name:'去杠杆督导', desc:'企业现金减少150万', eff:{cash:-150}},
+  {cat:'policy', name:'信贷收紧', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'policy', name:'影子银行整治', desc:'真实负债增加100万，公开负债增加100万', eff:{rd:100,pd:100}},
+  {cat:'policy', name:'房企分类监管', desc:'企业现金减少150万', eff:{cash:-150}},
+  {cat:'policy', name:'限购升级', desc:'企业现金减少120万', eff:{cash:-120}},
+  {cat:'policy', name:'限价令', desc:'公开净资产减少100万', eff:{pa:-100}},
+  // —— 调查 investigate 🔍 ——
+  {cat:'investigate', name:'财务审计', desc:'监管证据值增加1', eff:{ev:1}},
+  {cat:'investigate', name:'债券核查', desc:'公开负债增加120万，监管证据值增加1', eff:{ev:1,pd:120}},
+  {cat:'investigate', name:'立案调查', desc:'企业现金减少150万，监管证据值增加2', eff:{ev:2,cash:-150}},
+  {cat:'investigate', name:'强制措施', desc:'企业现金减少250万，监管证据值增加2', eff:{ev:2,cash:-250}},
+  {cat:'investigate', name:'专项核查', desc:'监管证据值增加1', eff:{ev:1}},
+  {cat:'investigate', name:'巡回审计', desc:'公开负债增加80万，监管证据值增加1', eff:{ev:1,pd:80}},
+  {cat:'investigate', name:'资金穿透', desc:'监管证据值增加2', eff:{ev:2}},
+  {cat:'investigate', name:'举报核查', desc:'公开负债增加60万，监管证据值增加1', eff:{ev:1,pd:60}},
+  {cat:'investigate', name:'监管约谈', desc:'监管证据值增加1', eff:{ev:1}},
+  {cat:'investigate', name:'现场稽查', desc:'企业现金减少100万，监管证据值增加2', eff:{ev:2,cash:-100}},
+  {cat:'investigate', name:'监管问询函', desc:'监管证据值增加1', eff:{ev:1}},
+  {cat:'investigate', name:'风险排查', desc:'公开负债增加60万，监管证据值增加1', eff:{ev:1,pd:60}},
+  {cat:'investigate', name:'信用评级展望负面', desc:'公开负债增加80万，监管证据值增加1', eff:{ev:1,pd:80}},
+  {cat:'investigate', name:'监管进驻', desc:'监管证据值增加2', eff:{ev:2}},
+  // —— 市场 market 📉 ——
+  {cat:'market', name:'银行抽贷', desc:'企业现金减少250万', eff:{cash:-250}},
+  {cat:'market', name:'评级下调', desc:'公开负债增加150万，监管证据值增加1', eff:{pd:150,ev:1}},
+  {cat:'market', name:'债权人挤兑', desc:'企业现金减少300万', eff:{cash:-300}},
+  {cat:'market', name:'股价暴跌', desc:'企业现金减少100万，公开净资产减少200万', eff:{pa:-200,cash:-100}},
+  {cat:'market', name:'债券暴跌', desc:'企业现金减少150万', eff:{cash:-150}},
+  {cat:'market', name:'融资断流', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'market', name:'资产冻结', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'market', name:'债委会进驻', desc:'企业现金减少150万', eff:{cash:-150}},
+  {cat:'market', name:'交叉违约', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'market', name:'市场预期恶化', desc:'企业现金减少80万，公开净资产减少100万', eff:{pa:-100,cash:-80}},
+  {cat:'market', name:'同业切割', desc:'企业现金减少100万', eff:{cash:-100}},
+  {cat:'market', name:'压降有息负债', desc:'企业现金减少150万', eff:{cash:-150}},
+  {cat:'market', name:'做空报告', desc:'企业现金减少80万，公开净资产减少120万', eff:{pa:-120,cash:-80}},
+  {cat:'market', name:'流动性危机', desc:'企业现金减少250万', eff:{cash:-250}},
+  // —— 司法 judicial ⚖️ ——
+  {cat:'judicial', name:'刑事移送', desc:'企业现金减少100万，监管证据值增加3', eff:{ev:3,cash:-100}},
+  {cat:'judicial', name:'资产查封', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'judicial', name:'限制出境', desc:'公开净资产减少100万，监管证据值增加1', eff:{ev:1,pa:-100}},
+  {cat:'judicial', name:'司法冻结', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'judicial', name:'行政处罚', desc:'公开负债增加80万，监管证据值增加1', eff:{ev:1,pd:80}},
+  {cat:'judicial', name:'连带责任追究', desc:'真实负债增加100万，监管证据值增加2', eff:{ev:2,rd:100}},
+  {cat:'judicial', name:'监管处罚决定书', desc:'监管证据值增加2', eff:{ev:2}},
+  {cat:'judicial', name:'强制执行', desc:'企业现金减少150万', eff:{cash:-150}},
+  // —— 舆情 media 📰 ——
+  {cat:'media', name:'负面深度报道', desc:'公开净资产减少120万，监管证据值增加1', eff:{pa:-120,ev:1}},
+  {cat:'media', name:'舆情持续发酵', desc:'公开净资产减少100万，监管证据值增加1', eff:{pa:-100,ev:1}},
+  {cat:'media', name:'媒体连环追问', desc:'监管证据值增加1', eff:{ev:1}},
+  {cat:'media', name:'信用负面观察', desc:'公开负债增加60万，监管证据值增加1', eff:{ev:1,pd:60}},
+  {cat:'media', name:'热搜危机', desc:'公开净资产减少150万', eff:{pa:-150}},
+  {cat:'media', name:'投资者恐慌', desc:'企业现金减少100万', eff:{cash:-100}},
+  {cat:'media', name:'债权人集体施压', desc:'企业现金减少120万', eff:{cash:-120}},
+  {cat:'media', name:'舆论拷问', desc:'监管证据值增加1', eff:{ev:1}},
+  // —— 宏观 macro 🌐 ——
+  {cat:'macro', name:'货币收紧', desc:'企业现金减少150万', eff:{cash:-150}},
+  {cat:'macro', name:'信贷定向管控', desc:'企业现金减少200万', eff:{cash:-200}},
+  {cat:'macro', name:'行业去产能', desc:'公开净资产减少150万', eff:{pa:-150}},
+  {cat:'macro', name:'宏观审慎评估', desc:'真实负债增加100万', eff:{rd:100}},
+  {cat:'macro', name:'跨境资本管制', desc:'企业现金减少100万', eff:{cash:-100}},
+  {cat:'macro', name:'房地产税试点', desc:'真实负债增加80万，公开净资产减少120万', eff:{pa:-120,rd:80}},
+  {cat:'macro', name:'流动性收紧', desc:'企业现金减少180万', eff:{cash:-180}},
+  {cat:'macro', name:'风险预警提示', desc:'监管证据值增加1', eff:{ev:1}},
+];
+
+// 每回合随机"市场风声"事件（轻量、方向大致中性，增加变数）
+const EVENTS = [
+  {name:'楼市小阳春', desc:'销售回暖，企业现金增加150万', apply:()=>{ state.exp.cash += 150; }},
+  {name:'评级展望稳定', desc:'监管缓和，监管证据值减少1', apply:()=>{ state.evidence = Math.max(0, state.evidence-1); }},
+  {name:'地方纾困', desc:'地方政府纾困基金注入，企业现金增加120万', apply:()=>{ state.exp.cash += 120; }},
+  {name:'行业凛冬', desc:'市场转冷，公开净资产减少100万', apply:()=>{ state.exp.publicAssets -= 100; }},
+  {name:'监管风声', desc:'监管吹风，监管证据值增加1', apply:()=>{ state.evidence += 1; }},
+  {name:'海外加息', desc:'融资成本上升，真实负债增加80万', apply:()=>{ state.exp.realDebt += 80; }},
+  {name:'销售回款加速', desc:'销售回款加速，企业现金增加150万', apply:()=>{ state.exp.cash += 150; }},
+  {name:'舆情风波', desc:'负面舆情，公开净资产减少80万、监管证据值增加1', apply:()=>{ state.exp.publicAssets -= 80; state.evidence += 1; }},
+];
+
+// ===================== 回合意外事件池（第3 / 第5 回合随机触发） =====================
+// 每个事件自带 eff()，执行时直接改写 state 并返回一句「影响摘要」用于弹窗展示。
+// 第3回合事件均包含：隐性债务集中暴露 + 监管调查效果翻倍（×2）——这是游戏核心机制，必须保留。
+// 效果幅度贴近原平衡基线（现金冲击约 -300万），以保证扩张/监管胜率不被破坏。
+const TURN_EVENTS = {
+  3: [
+    { icon:'⚠️', title:'理财兑付危机',
+      desc:'恒盛旗下理财类产品集中到期，投资者排队兑付，资金面骤然收紧。',
+      eff:()=>{ const ex=state.exp; const hidden=ex.realDebt-ex.publicDebt; const expose=Math.min(300,Math.max(0,hidden));
+                ex.publicDebt+=expose; ex.cash-=300; state.mods.investDbl=2;
+                if(ex.hiddenDebt>0){ ex.realDebt+=Math.round(ex.hiddenDebt*0.5); const hd=ex.hiddenDebt; ex.hiddenDebt=0; return `现金 -300万 ｜ 真实负债暴露 +${expose}万 ｜ 隐性债务引爆 +${hd}万 ｜ 监管调查 ×2`; }
+                return `现金 -300万 ｜ 真实负债暴露 +${expose}万 ｜ 监管调查 ×2`; } },
+    { icon:'🏦', title:'合作银行集中抽贷',
+      desc:'多家授信银行同步压降额度，恒盛流动性瞬间吃紧。',
+      eff:()=>{ const ex=state.exp; ex.cash-=360; ex.publicDebt+=120; state.mods.investDbl=2;
+                if(ex.hiddenDebt>0){ ex.realDebt+=Math.round(ex.hiddenDebt*0.5); const hd=ex.hiddenDebt; ex.hiddenDebt=0; return `现金 -360万 ｜ 公开负债 +120万 ｜ 隐性债务引爆 +${hd}万 ｜ 监管调查 ×2`; }
+                return `现金 -360万 ｜ 公开负债 +120万 ｜ 监管调查 ×2`; } },
+    { icon:'📜', title:'商票大面积逾期',
+      desc:'供应链商票出现连锁违约，上下游信心崩塌，融资成本飙升。',
+      eff:()=>{ const ex=state.exp; ex.cash-=280; ex.publicDebt+=120; state.mods.investDbl=2;
+                if(ex.hiddenDebt>0){ ex.realDebt+=Math.round(ex.hiddenDebt*0.5); const hd=ex.hiddenDebt; ex.hiddenDebt=0; return `现金 -280万 ｜ 公开负债 +120万 ｜ 隐性债务引爆 +${hd}万 ｜ 监管调查 ×2`; }
+                return `现金 -280万 ｜ 公开负债 +120万 ｜ 监管调查 ×2`; } },
+    { icon:'🔻', title:'评级展望遭下调',
+      desc:'评级机构将恒盛列入负面观察，融资窗口收窄、监管关注度上升。',
+      eff:()=>{ const ex=state.exp; ex.cash-=240; ex.publicDebt+=150; state.evidence+=1; state.mods.investDbl=2;
+                if(ex.hiddenDebt>0){ ex.realDebt+=Math.round(ex.hiddenDebt*0.5); const hd=ex.hiddenDebt; ex.hiddenDebt=0; return `现金 -240万 ｜ 公开负债 +150万 ｜ 证据 +1 ｜ 隐性债务引爆 +${hd}万 ｜ 监管调查 ×2`; }
+                return `现金 -240万 ｜ 公开负债 +150万 ｜ 证据 +1 ｜ 监管调查 ×2`; } },
+  ],
+  5: [
+    { icon:'🚨', title:'监管全面收紧',
+      desc:'窗口指导升级，多部门联合约谈，恒盛高压难解。',
+      eff:()=>{ const ex=state.exp; ex.cash-=150; state.evidence+=1; return `现金 -150万 ｜ 证据 +1`; } },
+    { icon:'🔍', title:'突击现场审计',
+      desc:'监管组进驻恒盛总部，账务逐笔穿透核查，问题无所遁形。',
+      eff:()=>{ const ex=state.exp; state.evidence+=2; return `证据 +2`; } },
+    { icon:'🧊', title:'流动性定向冻结',
+      desc:'部分账户与资产被司法冻结，腾挪空间骤减。',
+      eff:()=>{ const ex=state.exp; ex.cash-=260; return `现金 -260万`; } },
+    { icon:'📉', title:'政策窗口期关闭',
+      desc:'鼓励纾困的过渡期结束，恒盛重回强监管轨道，公开门面承压。',
+      eff:()=>{ const ex=state.exp; ex.publicAssets-=100; return `公开净资产 -100万`; } },
+  ],
+};
+
+function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+function catIcon(c){ return {expand:'🏗',operate:'🔧',buffer:'🛡',finance:'💰',pr:'📣',strategy:'🎯',policy:'📜',investigate:'🔍',market:'📉',judicial:'⚖️',media:'📰',macro:'🌐'}[c]||''; }
+function catName(c){ return {expand:'扩张',operate:'操作',buffer:'缓冲',finance:'金融',pr:'公关',strategy:'战略',policy:'政策',investigate:'调查',market:'市场',judicial:'司法',media:'舆情',macro:'宏观'}[c]||c; }
+
+// 构建一张卡牌 DOM（手牌 / 舞台 / 飞行克隆 通用）
+function makeCardEl(card){
+  const div=document.createElement('div');
+  div.className='card '+card.cat;
+  div.innerHTML =
+    '<div class="card-top"><span class="card-cat">'+catIcon(card.cat)+' '+catName(card.cat)+'</span></div>'+
+    '<div class="card-name">'+card.name+'</div>'+
+    '<div class="card-div"></div>'+
+    '<div class="card-eff">'+card.desc+'</div>';
+  return div;
+}
+
+// ===================== 游戏状态 =====================
+let state;
+let ANIMATE = true;          // 无头模拟时置 false，跳过动画走纯逻辑
+let busy = false;            // 动画进行中锁
+
+function newGame(){
+  state = {
+    turn:1, maxTurn:MAX_TURN,
+    playerSide: Math.random()<0.5 ? 'exp' : 'reg',
+    exp: { cash:1500, realAssets:1200, realDebt:1150, publicAssets:1200, publicDebt:500, hiddenDebt:0 },
+    evidence:0,
+    mods: { expGrowth:1, investDbl:1, debtInterest:false, limit:false },
+    expHand:[], regHand:[],
+    stagedExp:[], stagedReg:[],   // 本回合双方已打出但尚未结算的卡（可收回）
+    _snap:null,                   // 本回合开始时的状态快照，用于收回时回溯
+    played:0, over:false, winner:null,
+    log:[],
+    aiRandom:0.1,
+    reviewExp: [], reviewReg: [],  // 上一回合双方打出的牌（玩家回合时在出牌框内作参考展示）
+  };
+  applyDifficulty();               // 按所选难度 + 玩家身份设定胜负阈值
+  for(let i=0;i<4;i++){ state.expHand.push(rnd(EXP_CARDS)); state.regHand.push(rnd(REG_CARDS)); }
+  const you = state.playerSide==='exp' ? '扩张方（恒盛集团掌门人）' : '监管方（市场秩序维护者）';
+  const ai  = state.playerSide==='exp' ? '监管方（AI）' : '扩张方（AI）';
+  document.getElementById('yourRole').textContent = you;
+  document.getElementById('aiRole').textContent = ai;
+  document.getElementById('log').innerHTML='';
+  log(`<span class="q">开局抽签：你扮演【${you}】</span>`, true);
+  startTurn(true);
+}
+
+function log(msg, head){
+  const p=document.createElement('p');
+  p.innerHTML = head ? msg : `· ${msg}`;
+  document.getElementById('log').prepend(p);
+}
+
+// ===================== 卡牌生效（只改状态，不记日志） =====================
+// 出牌时即生效，便于实时反馈；收回时由 rederive() 从快照回溯后重算。
+function applyEffects(card){
+  const e = card.eff || {};
+  const exp = state.exp;
+  if(card._side==='exp'){
+    const g = state.mods.expGrowth;
+    if(e.cash) exp.cash += e.cash;
+    if(e.ra)   exp.realAssets += Math.round(e.ra*g);
+    // 扩张方打出的牌带来的真实负债统一打 5 折计入：无论是健康扩张还是金融借债，
+    // 这里把"出牌做大规模"的净效果设计为资产增长明显快于负债增长，使主动出牌才有机会推高安全比值；
+    // 而不出牌（idle）时真实负债不动、比值停在初始线以下，必然落败。
+    if(e.rd)   exp.realDebt += Math.round(e.rd * 0.5);
+    if(e.pa)   exp.publicAssets += Math.round(e.pa*g);
+    if(e.pd)   exp.publicDebt += e.pd;
+    // 证据值：仅「监管加证据(正ev)」受调查翻倍倍率影响；扩张方「减证据(负ev)」固定 ×1，不被 investDbl 放大
+    if(e.ev)   state.evidence += Math.round(e.ev * (e.ev>0 ? state.mods.investDbl : 1));
+    if(e.hd)   exp.hiddenDebt += e.hd;   // 隐性债务：平时潜伏，不计入真实负债
+    if(card.special==='redLines'){
+      if(exp.publicDebt>500) exp.cash -= 200;
+      state.mods.expGrowth = 0.6;
+    } else if(card.special==='limitExpand'){
+      state.mods.expGrowth = Math.min(state.mods.expGrowth, 0.7);
+    } else if(card.special==='debtInterest'){
+      state.mods.debtInterest = true;
+    }
+  } else {
+    if(e.cash) exp.cash += e.cash;
+    if(e.ra)   exp.realAssets += e.ra;
+    if(e.rd)   exp.realDebt += e.rd;
+    if(e.pa)   exp.publicAssets += e.pa;
+    if(e.pd)   exp.publicDebt += e.pd;
+    if(e.ev)   state.evidence += Math.round(e.ev * (e.ev>0 ? state.mods.investDbl : 1));
+  }
+  if(exp.realDebt<0) exp.realDebt=0;
+  if(exp.publicDebt<0) exp.publicDebt=0;
+}
+
+// 仅负责把出牌写进日志
+function logPlay(card, byAI){
+  const tag = byAI ? (card._side==='exp'?'<span class="ai">[AI·扩张]</span> ':'<span class="ai">[AI·监管]</span> ')
+                   : (card._side==='exp'?'<span class="you">[你·扩张]</span> ':'<span class="you">[你·监管]</span> ');
+  if(card._side==='exp' && card.special==='redLines'){
+    const extra = state.exp.publicDebt>500 ? '公开负债过高触发额外现金减少200万，' : '';
+    log(`${tag}打出【${card.name}】：${extra}扩张效果降至×0.6`);
+  } else if(card._side==='exp' && card.special==='limitExpand'){
+    log(`${tag}打出【${card.name}】：扩张效果降至×0.7`);
+  } else if(card._side==='exp' && card.special==='debtInterest'){
+    log(`${tag}打出【${card.name}】：融资新规生效，真实负债每回合增加100万`);
+  } else {
+    log(`${tag}打出【${card.name}】${card.desc}`);
+  }
+}
+
+// 本回合开始快照，用于收回卡牌后回溯状态
+function takeSnapshot(){
+  state._snap = JSON.parse(JSON.stringify({exp:state.exp, evidence:state.evidence, mods:state.mods}));
+}
+// 收回卡牌后：恢复到本回合开始快照，再按剩余暂存顺序重算
+function rederive(){
+  const s = state._snap;
+  if(!s) return;
+  state.exp = JSON.parse(JSON.stringify(s.exp));
+  state.evidence = s.evidence;
+  state.mods = JSON.parse(JSON.stringify(s.mods));
+  for(const c of playerStaged()) applyEffects(c);
+}
+
+function playerStaged(){ return state.playerSide==='exp' ? state.stagedExp : state.stagedReg; }
+function aiStaged(){ return state.playerSide==='exp' ? state.stagedReg : state.stagedExp; }
+
+// ===================== 飞行动画（出牌到中央舞台） =====================
+function flyCard(card, side, fromRect, done){
+  const clone = makeCardEl(card);
+  clone.classList.add('fly');
+  clone.style.position='fixed';
+  clone.style.left = fromRect.left+'px';
+  clone.style.top = fromRect.top+'px';
+  clone.style.width = fromRect.width+'px';
+  clone.style.height = fromRect.height+'px';
+  clone.style.margin='0';
+  document.body.appendChild(clone);
+  const slot = side==='exp' ? document.getElementById('slotExp') : document.getElementById('slotReg');
+  const to = slot.getBoundingClientRect();
+  const dx = (to.left+to.width/2) - (fromRect.left+fromRect.width/2);
+  const dy = (to.top+to.height/2) - (fromRect.top+fromRect.height/2);
+  void clone.getBoundingClientRect();
+  requestAnimationFrame(()=>{
+    clone.style.transition='transform .45s cubic-bezier(.2,.7,.3,1), opacity .45s';
+    clone.style.transform = `translate(${dx}px,${dy}px) scale(.92) rotate(${side==='exp'?-9:9}deg)`;
+  });
+  let finished=false;
+  const finish=()=>{
+    if(finished) return; finished=true;
+    if(clone.parentNode) clone.parentNode.removeChild(clone);
+    const sideEl = side==='exp' ? document.getElementById('arenaExp') : document.getElementById('arenaReg');
+    sideEl.classList.remove(side==='exp'?'flashL':'flashR'); void sideEl.offsetWidth;
+    sideEl.classList.add(side==='exp'?'flashL':'flashR');
+    done && done();
+  };
+  clone.addEventListener('transitionend', finish, {once:true});
+  setTimeout(finish, 560);
+}
+
+function clashCheck(){
+  const hasExp = document.getElementById('slotExp').querySelector('.card:not(.review)');
+  const hasReg = document.getElementById('slotReg').querySelector('.card:not(.review)');
+  if(hasExp && hasReg){
+    const vs=document.getElementById('vsBadge');
+    vs.classList.remove('clash'); void vs.offsetWidth; vs.classList.add('clash');
+  }
+}
+
+function clearArena(){
+  state.stagedExp = []; state.stagedReg = [];
+  document.getElementById('slotExp').innerHTML='<div class="slot-empty">待出牌</div>';
+  document.getElementById('slotReg').innerHTML='<div class="slot-empty">待出牌</div>';
+}
+
+// ===================== 回合流程 =====================
+function startTurn(first){
+  if(!first){
+    while(state.expHand.length<5) state.expHand.push(rnd(EXP_CARDS));
+    while(state.regHand.length<5) state.regHand.push(rnd(REG_CARDS));
+  }
+  state.played = 0;
+  clearArena();
+  if(!first){ state.exp.cash += 300; log('经营回款：企业现金增加300万'); }
+  // 第3回合：随机抽取「危机类」意外事件（含隐性债务暴露 + 监管调查 ×2 核心机制）
+  let pendingEv = null;
+  if(state.turn===3 && !state._eventDone){
+    state._eventDone = true;
+    const ev = rnd(TURN_EVENTS[3]);
+    const summary = ev.eff();
+    log(`<span class="q">⚠️ 第3回合意外事件 · 【${ev.title}】：${ev.desc}</span>`, true);
+    log(`<span class="q">　影响：${summary}</span>`, true);
+    pendingEv = { turn:3, ev, summary };
+  }
+  // 第5回合：随机抽取「收紧类」意外事件
+  if(state.turn===5 && !state._event2){
+    state._event2 = true;
+    const ev = rnd(TURN_EVENTS[5]);
+    const summary = ev.eff();
+    log(`<span class="q">⚠️ 第5回合意外事件 · 【${ev.title}】：${ev.desc}</span>`, true);
+    log(`<span class="q">　影响：${summary}</span>`, true);
+    pendingEv = { turn:5, ev, summary };
+  }
+  // 每回合随机市场风声
+  if(!first){
+    const ev = rnd(EVENTS);
+    ev.apply();
+    log(`<span class="q">📡 市场风声·${ev.name}：${ev.desc}</span>`, true);
+  }
+  log(`<span class="q">—— 第 ${state.turn} 回合开始 ——</span>`, true);
+  takeSnapshot();                 // 记录本回合基准状态，供收回卡牌时回溯
+  render();
+  if(pendingEv) showEventModal(pendingEv.turn, pendingEv.ev, pendingEv.summary);  // 回合开始弹窗告知玩家
+}
+
+function playerPlay(idx, el){
+  if(state.over || busy) return;
+  const hand = state.playerSide==='exp' ? state.expHand : state.regHand;
+  const staged = playerStaged();
+  if(idx<0 || idx>=hand.length) return;
+  if(staged.length>=2) return;          // 每回合最多暂存 2 张
+  let rect;
+  try { rect = el.getBoundingClientRect(); } catch(e){ rect = {left:0,top:0,width:138,height:138}; }
+  const card = hand.splice(idx,1)[0];
+  card._side = state.playerSide;
+  staged.push(card);
+  applyEffects(card);                    // 出牌即生效（实时反馈）
+  logPlay(card, false);
+  if(!ANIMATE){ render(); return; }
+  busy = true;
+  flyCard(card, state.playerSide, rect, ()=>{
+    busy = false; render(); clashCheck();
+  });
+}
+
+// 收回刚刚打出的卡：退回手牌，并从本回合快照回溯后重算剩余暂存卡
+function recallCard(side, cardObj){
+  if(state.over || busy) return;
+  const staged = side==='exp' ? state.stagedExp : state.stagedReg;
+  const hand = side==='exp' ? state.expHand : state.regHand;
+  const i = staged.indexOf(cardObj);
+  if(i<0) return;
+  staged.splice(i,1);
+  hand.push(cardObj);
+  rederive();
+  log(`↩️ 收回【${cardObj.name}】，退回手牌`);
+  render();
+}
+
+function aiTurnAnimated(done){
+  if(!ANIMATE){ aiTurn(); done && done(); return; }
+  const aiSide = state.playerSide==='exp' ? 'reg' : 'exp';
+  const aiStg = aiStaged();
+  let plays=0;
+  function step(){
+    if(plays>=AI_PLAY_LIMIT){ done && done(); return; }
+    const idx = chooseAICard(aiSide);
+    if(idx<0){ done && done(); return; }
+    const hand = aiSide==='exp' ? state.expHand : state.regHand;
+    const card = hand.splice(idx,1)[0];
+    card._side = aiSide;
+    aiStg.push(card);
+    applyEffects(card);
+    logPlay(card, true);
+    let rect;
+    try {
+      const src = document.getElementById('aipile').getBoundingClientRect();
+      rect = { left: src.left+src.width/2-69, top: src.top, width:138, height:138 };
+    } catch(e){ rect = {left:0,top:0,width:138,height:138}; }
+    flyCard(card, aiSide, rect, ()=>{
+      plays++; render(); clashCheck();
+      // 出完一张后停顿，让玩家看清 AI 的每一步
+      setTimeout(step, AI_STEP_DELAY);
+    });
+  }
+  // 玩家点「结束本回合」后，稍作停顿再让 AI 开始出牌
+  setTimeout(step, 400);
+}
+
+function aiTurn(){
+  const aiSide = state.playerSide==='exp' ? 'reg' : 'exp';
+  const aiStg = aiStaged();
+  let plays=0;
+  while(plays<AI_PLAY_LIMIT){
+    const idx = chooseAICard(aiSide);
+    if(idx<0) break;
+    const hand = aiSide==='exp' ? state.expHand : state.regHand;
+    const card = hand.splice(idx,1)[0];
+    card._side = aiSide;
+    aiStg.push(card);
+    applyEffects(card);
+    logPlay(card, true);
+    plays++;
+  }
+}
+
+// AI 出牌策略（覆盖全部 12 类）
+function chooseAICard(side){
+  const hand = side==='exp' ? state.expHand : state.regHand;
+  if(hand.length===0) return -1;
+  // 难度：新手难度下 AI 有概率随机出牌（更弱）
+  if(state.aiRandom>0 && Math.random()<state.aiRandom){
+    return Math.floor(Math.random()*hand.length);
+  }
+  if(side==='exp'){
+    // 现金告急：优先回血（finance 或带正现金的卡）
+    if(state.exp.cash<500){ const i=hand.findIndex(c=>(c.eff&&c.eff.cash>0)||c.cat==='finance'); if(i>=0) return i; }
+    // 监管证据逼近：用 buffer/pr 削减证据
+    if(state.evidence>=8){ const i=hand.findIndex(c=>(c.eff&&c.eff.ev<0)||c.cat==='buffer'||c.cat==='pr'); if(i>=0) return i; }
+    // 优先做大规模（expand/strategy）
+    const i=hand.findIndex(c=>c.cat==='expand'||c.cat==='strategy'); if(i>=0) return i;
+    const i2=hand.findIndex(c=>c.cat==='finance'); if(i2>=0) return i2;
+    const i3=hand.findIndex(c=>c.cat==='operate'||c.cat==='pr'); if(i3>=0) return i3;
+    return 0;
+  } else {
+    // 证据未满阈值：优先堆叠证据（investigate/judicial/media 或带 ev 的卡）
+    if(state.evidence < EV_THRESHOLD-2){ const i=hand.findIndex(c=>(c.eff&&c.eff.ev>0)||c.cat==='investigate'||c.cat==='judicial'||c.cat==='media'); if(i>=0) return i; }
+    // 否则抽紧现金（market/macro 或带负现金的卡）
+    const i=hand.findIndex(c=>(c.eff&&c.eff.cash<0)||c.cat==='market'||c.cat==='macro'); if(i>=0) return i;
+    const i2=hand.findIndex(c=>c.cat==='policy'); if(i2>=0) return i2;
+    return 0;
+  }
+}
+
+function endTurn(){
+  if(state.over || busy) return;
+  if(!ANIMATE){ aiTurn(); finalizeTurn(); return; }
+  busy = true;
+  aiTurnAnimated(()=>{ finalizeTurn(); busy = false; });
+}
+
+function finalizeTurn(){
+  if(state.mods.debtInterest){ state.exp.realDebt += 100; log(`融资新规：真实负债增加100万`); }
+  if(state.exp.cash < 0){ return gameOver('reg','regCash'); }
+  if(state.evidence >= EV_THRESHOLD){ return gameOver('reg','regEvidence'); }
+  state.turn++;
+  if(state.turn > state.maxTurn){
+    if(state.exp.hiddenDebt>0){ state.exp.realDebt += Math.round(state.exp.hiddenDebt*0.5); state.exp.hiddenDebt = 0; }  // 终局前隐性债务按50%暴露
+    const ratio = state.exp.realDebt>0 ? state.exp.realAssets/state.exp.realDebt : 99;
+    if(ratio > SAFE_RATIO){
+      if(ratio >= 1.6) return gameOver('exp','expPerfect');
+      return gameOver('exp','expNarrow');
+    }
+    return gameOver('reg','regRatio');
+  }
+  // 把刚结束回合双方打出的牌存入「回顾」，供玩家下个回合在出牌框里查看
+  state.reviewExp = state.stagedExp.slice();
+  state.reviewReg = state.stagedReg.slice();
+  startTurn(false);
+}
+
+// ===================== 多结局 =====================
+const ENDINGS = {
+  expPerfect:{moji:'👑',title:'帝国加冕',desc:'七回合鏖战，恒盛集团真实资产远超安全线，在监管重压之下依然稳健扩张。掌门人奠定商业帝国，堪称教科书级操盘！'},
+  expNarrow:{moji:'🏆',title:'惊险过关',desc:'终局时刻真实资产勉强越过安全线，恒盛在悬崖边续命成功。这一局，赢得惊心动魄。'},
+  regCash:{moji:'💥',title:'资金链断裂',desc:'恒盛集团现金流彻底崩断，供应商挤兑、银行抽贷、理财逾期接踵而至……掌门人黯然出局。'},
+  regEvidence:{moji:'⛓️',title:'追责成功',desc:'监管方层层深挖，证据链完全闭合。掌门人因违规操作被追究责任，监管大获全胜。'},
+  regRatio:{moji:'📉',title:'规模虚胖',desc:'十回合后真实资产仍未达安全线，表面繁华的恒盛帝国被戳破泡沫，遭强制出清。'},
+  surrender:{moji:'🏳️',title:'投降',desc:'你主动认负，对手不战而胜。棋局未终而鸣金收兵——换个策略，再来一局？'},
+};
+
+function gameOver(winner, type){
+  state.over = true; state.winner = winner;
+  const youWin = (winner===state.playerSide);
+  const e = ENDINGS[type];
+  const moji = document.getElementById('moji');
+  const title = document.getElementById('mTitle');
+  const desc = document.getElementById('mDesc');
+  moji.textContent = e.moji;
+  title.textContent = (youWin?'你赢了 · ':'你输了 · ') + e.title;
+  const sideName = state.playerSide==='exp' ? '扩张方' : '监管方';
+  desc.innerHTML = e.desc + `<br><br>你扮演的是 <b>${sideName}</b>，本局结果：<b>${youWin?'胜利':'失败'}</b>`;
+  state._endType = type;
+  render();
+  buildEndStats();
+  showScreen('pageEnd');
+}
+
+// 结算页战绩面板：终局复盘，展示双方真实数据
+function buildEndStats(){
+  const ex = state.exp;
+  const sideName = state.playerSide==='exp' ? '扩张方' : '监管方';
+  const diffName = chosenDifficulty==='easy'?'新手':chosenDifficulty==='hard'?'困难':'普通';
+  const realNet = ex.realAssets - ex.realDebt;
+  const safeLine = ex.realDebt*SAFE_RATIO;
+  const safeOk = ex.realAssets > safeLine;
+  const safePct = safeLine>0 ? Math.round(ex.realAssets/safeLine*100) : 100;
+  const rows = [
+    ['你扮演', sideName, ''],
+    ['难度', diffName, ''],
+    ['坚持回合', state.turn + ' / ' + state.maxTurn, ''],
+    ['企业现金', ex.cash+'万', ex.cash<0?'bad':ex.cash<400?'warn':'good'],
+    ['真实资产', ex.realAssets+'万', 'good'],
+    ['真实负债', ex.realDebt+'万', 'bad'],
+    ['真实净资产', realNet+'万', realNet<0?'bad':realNet<400?'warn':'good'],
+    ['安全线达标', (safeOk?'✓ 达标 ':'✗ 未达标 ')+safePct+'%', safeOk?'good':'bad'],
+    ['监管证据', state.evidence+' / '+EV_THRESHOLD, state.evidence>=EV_THRESHOLD?'bad':'good'],
+    ['隐性埋雷', ex.hiddenDebt>0? ex.hiddenDebt+'万':'无', ex.hiddenDebt>0?'bad':'good'],
+  ];
+  let h = '<h4>本局战绩复盘</h4>';
+  rows.forEach(r=>{ h += '<div class="stat-row"><span class="k">'+r[0]+'</span><span class="v '+r[2]+'">'+r[1]+'</span></div>'; });
+  const box = document.getElementById('endStats');
+  if(box) box.innerHTML = h;
+}
+
+// ===================== 渲染 =====================
+function showScreen(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ===================== 回合意外事件弹窗 =====================
+function showEventModal(turn, ev, summary){
+  const box = document.getElementById('eventOverlay');
+  if(!box) return;
+  document.getElementById('eventTurn').textContent = `第 ${turn} 回合 · 突发意外事件`;
+  document.getElementById('eventIcon').textContent = ev.icon || '⚠️';
+  document.getElementById('eventTitle').textContent = ev.title;
+  document.getElementById('eventDesc').textContent = ev.desc;
+  document.getElementById('eventEff').textContent = '影响：' + summary;
+  box.classList.add('show');
+}
+function hideEventModal(){
+  const box = document.getElementById('eventOverlay');
+  if(box) box.classList.remove('show');
+}
+
+function render(){
+  const ex = state.exp;
+  const staged = playerStaged();
+  state.played = staged.length;          // 本回合已暂存张数（最多2）
+  document.getElementById('turnNum').textContent = state.turn;
+  document.getElementById('maxTurnNum').textContent = state.maxTurn;
+  document.getElementById('playedNum').textContent = state.played;
+
+  const pubNet = ex.publicAssets - ex.publicDebt;
+  const realNet = ex.realAssets - ex.realDebt;
+  const lev = ex.realAssets>0 ? Math.round(ex.realDebt/ex.realAssets*100) : 100;
+
+  document.getElementById('m_cash').textContent = ex.cash + '万';
+  document.getElementById('m_cash').className = 'v ' + (ex.cash<0?'bad':ex.cash<400?'warn':'good');
+  document.getElementById('m_pub').textContent = pubNet + '万';
+  document.getElementById('m_pub').className = 'v ' + (pubNet<0?'bad':pubNet<400?'warn':'good');
+  const realEl = document.getElementById('m_real');
+  if(state.playerSide==='exp'){
+    realEl.textContent = realNet + '万（真实）';
+    realEl.className = 'v ' + (realNet<0?'bad':realNet<400?'warn':'good');
+  } else {
+    realEl.textContent = '???（隐藏）';
+    realEl.className = 'v';
+  }
+  const levEl = document.getElementById('m_lev');
+  levEl.textContent = lev + '%';
+  levEl.className = 'v ' + (lev>70?'bad':lev>50?'warn':'good');
+
+  // 安全线达标（真实资产 > 真实负债×SAFE_RATIO）
+  const safeEl = document.getElementById('m_safe');
+  const safeLine = ex.realDebt*SAFE_RATIO;
+  const safePct = safeLine>0 ? Math.min(100, Math.round(ex.realAssets/safeLine*100)) : 100;
+  const safeOk = ex.realAssets > safeLine;
+  const sb = document.getElementById('safebar');
+  if(state.playerSide==='exp'){
+    safeEl.textContent = safeOk ? '✓ 已达标' : '✗ 未达标';
+    safeEl.className = 'v ' + (safeOk?'good':'bad');
+    sb.style.width = safePct + '%';
+    sb.style.background = safeOk ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#f59e0b,#ef4444)';
+  } else {
+    safeEl.textContent = '???（隐藏）';
+    safeEl.className = 'v';
+    sb.style.width = '0%';
+  }
+
+  // 隐性债务隐患（仅扩张方可见，监管方隐藏）
+  const hdEl = document.getElementById('m_hd');
+  if(state.playerSide==='exp'){
+    hdEl.textContent = ex.hiddenDebt>0 ? (ex.hiddenDebt+'万（埋雷）') : '无';
+    hdEl.className = 'v ' + (ex.hiddenDebt>0?'bad':'good');
+  } else {
+    hdEl.textContent = '???（隐藏）';
+    hdEl.className = 'v';
+  }
+
+  document.getElementById('m_ev').textContent = state.evidence + ' / ' + EV_THRESHOLD;
+  document.getElementById('evbar').style.width = Math.min(100, state.evidence/EV_THRESHOLD*100) + '%';
+  document.getElementById('m_dbl').textContent = '×' + state.mods.investDbl;
+  const mods = [];
+  if(state.mods.expGrowth<1) mods.push('扩张受限');
+  if(state.mods.debtInterest) mods.push('利息滚续');
+  document.getElementById('m_mod').textContent = mods.length? mods.join('、') : '正常';
+
+  // 中央对决舞台（双方暂存卡并排展示）
+  renderArenaForSide('exp');
+  renderArenaForSide('reg');
+
+  // 玩家手牌
+  const hand = state.playerSide==='exp' ? state.expHand : state.regHand;
+  const handEl = document.getElementById('hand');
+  handEl.innerHTML = '';
+  document.getElementById('yourHandTitle').textContent =
+    (state.playerSide==='exp'?'扩张方手牌':'监管方手牌') + '（点击打出，本回合最多2张）';
+  hand.forEach((c,i)=>{
+    const cardEl = makeCardEl(c);
+    cardEl.style.animationDelay = (i*0.045)+'s';
+    if(state.played>=2 || state.over || busy) cardEl.classList.add('disabled');
+    cardEl.onclick = ()=>playerPlay(i, cardEl);
+    handEl.appendChild(cardEl);
+  });
+  if(hand.length===0) handEl.innerHTML='<span style="color:#64748b">（无手牌）</span>';
+
+  // AI 手牌背面
+  const aiHand = state.playerSide==='exp' ? state.regHand : state.expHand;
+  const aiEl = document.getElementById('aipile');
+  aiEl.innerHTML='';
+  document.getElementById('aiHandTitle').textContent = 'AI 手牌（背面，不可见）共 '+aiHand.length+' 张';
+  for(let i=0;i<aiHand.length;i++){
+    const b=document.createElement('div'); b.className='cardback'; b.textContent='AI'; aiEl.appendChild(b);
+  }
+
+  document.getElementById('endTurnBtn').disabled = state.over;
+  document.getElementById('hint').textContent = state.over ? '对局已结束'
+    : (state.played>=2 ? '已出满2张，可点中央卡牌收回，或结束本回合'
+                       : '可继续出牌或结束本回合');
+}
+
+// 把某一侧的暂存卡渲染到中央舞台槽位（并排，互不叠放）
+function renderArenaForSide(side){
+  const slotId = side==='exp' ? 'slotExp' : 'slotReg';
+  const staged = side==='exp' ? state.stagedExp : state.stagedReg;
+  const review = side==='exp' ? state.reviewExp : state.reviewReg;
+  const el = document.getElementById(slotId);
+  el.innerHTML = '';
+  // 玩家本回合还没出牌时，先在出牌框里保留上一回合双方的牌作为参考
+  const showReview = staged.length===0 && review && review.length>0;
+  const cards = showReview ? review : staged;
+  if(cards.length===0){ el.innerHTML='<div class="slot-empty">待出牌</div>'; return; }
+  cards.forEach(card=>{
+    const ce = makeCardEl(card);
+    ce.classList.add('reveal','arena-card');
+    if(showReview){
+      ce.classList.add('review');
+      ce.style.cursor='default';
+      ce.title='上一回合出牌（参考）';
+    } else if(side===state.playerSide && !state.over){
+      ce.style.cursor='pointer';
+      ce.title='点击收回';
+      ce.onclick = ()=>recallCard(side, card);
+    }
+    el.appendChild(ce);
+  });
+}
+
+// ===================== 背景音乐《朋友的酒》（Web Audio 合成，离线循环） =====================
+// 默认播放同目录下的《朋友的酒.mp3》原曲；文件不存在时自动回退到合成旋律。
+// 也可点开始页「📁 选原曲」按钮，选择本地的任意音频文件（支持你自己的正版《朋友的酒》）。
+let BGM_URL = '朋友的酒.mp3';
+let audioCtx = null, musicOn = true, musicTimer = null, musicStep = 0, bgmAudio = null;
+// 旋律（C 大调，近似《朋友的酒》副歌动机，八分音符为一拍单元，'-' 为休止）
+const BGM_NOTES = [
+  'G4','G4','A4','A4','G4','E4','G4','-',
+  'A4','A4','C5','C5','B4','A4','G4','-',
+  'D4','D4','E4','E4','D4','B3','D4','-',
+  'E4','E4','G4','G4','F4','E4','D4','-',
+];
+function noteFreq(n){
+  const map = {C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,C5:523.25,B3:246.94,'-':0};
+  return map[n] || 0;
+}
+function ensureAudio(){
+  if(!audioCtx){
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ audioCtx = null; }
+  }
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+}
+function playBgmNote(){
+  if(!audioCtx || !musicOn) return;
+  const n = BGM_NOTES[musicStep % BGM_NOTES.length];
+  musicStep++;
+  const f = noteFreq(n);
+  if(f>0){
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.34);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t+0.36);
+  }
+}
+function startBGM(){
+  ensureAudio();
+  if(BGM_URL){
+    if(!bgmAudio){
+      bgmAudio = new Audio(BGM_URL);
+      bgmAudio.loop = true;
+      bgmAudio.volume = 0.5;
+      // 原曲文件缺失或无法解码：自动回退到合成旋律，保证有声音
+      bgmAudio.addEventListener('error', ()=>{ bgmAudio = null; fallbackToSynth(); });
+    }
+    bgmAudio.play().catch(()=>{ /* 自动播放被拦截则等下次用户手势再播 */ });
+    return;
+  }
+  fallbackToSynth();
+}
+function fallbackToSynth(){
+  if(!audioCtx) return;
+  if(musicTimer) return;
+  musicTimer = setInterval(playBgmNote, 360);
+  playBgmNote();
+}
+function stopBGM(){
+  if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+  if(bgmAudio){ bgmAudio.pause(); }
+}
+function setMusic(on){
+  musicOn = on;
+  const btn = document.getElementById('musicToggle');
+  const mtop = document.getElementById('mtopMusic');
+  if(btn){ btn.textContent = on ? '开启中' : '已关闭'; btn.classList.toggle('on', on); }
+  if(mtop){ mtop.textContent = on ? '🎵 音乐:开' : '🔇 音乐:关'; mtop.classList.toggle('on', on); }
+  if(on) startBGM(); else stopBGM();
+}
+
+// ===================== 按钮绑定 =====================
+// 难度选择
+document.querySelectorAll('#diffRow .diff-btn').forEach(b=>{
+  b.onclick = ()=>{
+    chosenDifficulty = b.dataset.diff;
+    document.querySelectorAll('#diffRow .diff-btn').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+  };
+});
+// 音乐开关
+document.getElementById('musicToggle').onclick = ()=> setMusic(!musicOn);
+document.getElementById('mtopMusic').onclick = ()=> setMusic(!musicOn);
+// 选择本地原曲音频文件
+document.getElementById('musicPick').onclick = ()=> document.getElementById('musicFile').click();
+document.getElementById('musicFile').onchange = (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  stopBGM();                 // 停掉旧的（合成或原曲）
+  bgmAudio = null;
+  BGM_URL = URL.createObjectURL(f);   // 用本地文件作为原曲音源
+  if(musicOn) startBGM();
+};
+
+document.getElementById('drawBtn').onclick = function(){ newGame(); showScreen('pageGame'); if(musicOn) startBGM(); };
+document.getElementById('againBtn').onclick = function(){ newGame(); showScreen('pageGame'); if(musicOn) startBGM(); };
+document.getElementById('homeBtn').onclick = function(){ showScreen('pageStart'); };
+document.getElementById('surrenderBtn').onclick = function(){ surrender(); };
+document.getElementById('endTurnBtn').onclick = endTurn;
+document.getElementById('eventOk').onclick = hideEventModal;
+
+// ===================== 炫耀一下 =====================
+function buildBragText(){
+  const ex = state.exp;
+  const youWin = (state.winner===state.playerSide);
+  const sideName = state.playerSide==='exp' ? '扩张方' : '监管方';
+  const diffName = chosenDifficulty==='easy'?'新手':chosenDifficulty==='hard'?'困难':'普通';
+  const realNet = ex.realAssets - ex.realDebt;
+  const safeLine = ex.realDebt*SAFE_RATIO;
+  const safeOk = ex.realAssets > safeLine;
+  const safePct = safeLine>0 ? Math.round(ex.realAssets/safeLine*100) : 100;
+  const ev = state.evidence + '/' + EV_THRESHOLD;
+  const e = ENDINGS[state._endType] || {title:'对局结束'};
+  let head, body;
+  if(youWin){
+    if(state.playerSide==='exp'){
+      head = '🏆【监管与扩张】';
+      body = '我以「扩张方」在【'+diffName+'难度】执掌恒盛集团，'+e.title+'！终局真实资产 '+ex.realAssets+'万、净资产 '+realNet+'万、安全线达标率 '+safePct+'%，监管证据仅 '+ev+'——教科书级操盘，帝国加冕！不服来战？';
+    } else {
+      head = '⛓️【监管与扩张】';
+      body = '我以「监管方」在【'+diffName+'难度】'+e.title+'！对手真实负债 '+ex.realDebt+'万、净资产 '+realNet+'万、安全线'+(safeOk?'踩线':'失守')+'，证据链 '+ev+' 闭合——泡沫终被戳破！';
+    }
+  } else {
+    if(state.playerSide==='exp'){
+      head = '😤【监管与扩张】';
+      body = '这局以「扩张方」在【'+diffName+'难度】惜败，'+e.title+'：真实负债 '+ex.realDebt+'万压顶、净资产 '+realNet+'万……帝国野心不死，下局翻盘！';
+    } else {
+      head = '🤕【监管与扩张】';
+      body = '这局以「监管方」在【'+diffName+'难度】惜败，'+e.title+'：让对手真实资产冲到 '+ex.realAssets+'万、安全线达标率 '+safePct+'%……重抖擞，再战！';
+    }
+  }
+  return head + body;
+}
+function showBragToast(msg){
+  let t = document.getElementById('bragToast');
+  if(!t){ t = document.createElement('div'); t.id='bragToast'; t.className='brag-toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch(err){ showBragToast('复制失败，请手动长按选择'); }
+  document.body.removeChild(ta);
+}
+function copyBrag(){
+  const btn = document.getElementById('bragBtn');
+  if(btn){ btn.classList.remove('brag-pop'); void btn.offsetWidth; btn.classList.add('brag-pop'); }
+  const text = buildBragText();
+  const done = ()=> showBragToast('战绩已复制，去群里炫耀吧！🎉');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text, done));
+  } else { fallbackCopy(text, done); }
+}
+document.getElementById('bragBtn').onclick = copyBrag;
+
+// 投降：玩家直接判负，对手获胜
+function surrender(){
+  if(state.over || busy) return;
+  const winner = state.playerSide==='exp' ? 'reg' : 'exp';
+  gameOver(winner, 'surrender');
+}
+
+// ===================== 新手指导独立页 =====================
+function buildGuide(){
+  const expCats = ['expand','operate','buffer','finance','pr','strategy'];
+  const regCats = ['policy','investigate','market','judicial','media','macro'];
+  let h='';
+  expCats.forEach(c=>{
+    h += '<div class="gcat"><h5>'+catIcon(c)+' '+catName(c)+'</h5><div class="gcards">';
+    EXP_CARDS.filter(x=>x.cat===c).forEach(x=>{
+      const warn = (x.eff && x.eff.hd) ? ' ⚠️埋雷' : '';
+      h += '<div class="gcard '+x.cat+'"><div class="gn">'+x.name+warn+'</div><div class="gd">'+x.desc+'</div></div>';
+    });
+    h += '</div></div>';
+  });
+  document.getElementById('expGuide').innerHTML = h;
+  let h2='';
+  regCats.forEach(c=>{
+    h2 += '<div class="gcat"><h5>'+catIcon(c)+' '+catName(c)+'</h5><div class="gcards">';
+    REG_CARDS.filter(x=>x.cat===c).forEach(x=>{
+      h2 += '<div class="gcard '+x.cat+'"><div class="gn">'+x.name+'</div><div class="gd">'+x.desc+'</div></div>';
+    });
+    h2 += '</div></div>';
+  });
+  document.getElementById('regGuide').innerHTML = h2;
+}
+
+document.getElementById('guideBtn').onclick = ()=> showScreen('pageGuide');
+document.getElementById('guideBackBtn').onclick = ()=> showScreen('pageStart');
+buildGuide();
+</script>
+</body>
+</html>
