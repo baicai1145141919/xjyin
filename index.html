@@ -202,6 +202,10 @@
   .btn-ad { background:linear-gradient(180deg,#fb923c,#ea580c); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-size:13.5px; font-weight:700; cursor:pointer; width:100%; margin:0 0 12px; box-shadow:0 6px 16px rgba(234,88,12,.32); transition:transform .12s; }
   .btn-ad:hover { transform:translateY(-2px); }
   .btn-ad .ad-tag { font-size:10px; opacity:.85; font-weight:600; margin-left:6px; border:1px solid rgba(255,255,255,.5); border-radius:4px; padding:1px 4px; }
+  .ad-row { display:flex; gap:10px; margin:0 0 12px; }
+  .ad-row .btn-ad { margin:0; flex:1 1 0; width:auto; min-width:0; }
+  .btn-author { background:linear-gradient(180deg,#fb7299,#f25d8e); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-size:13.5px; font-weight:700; cursor:pointer; flex:1 1 0; min-width:0; box-shadow:0 6px 16px rgba(242,93,142,.32); transition:transform .12s; }
+  .btn-author:hover { transform:translateY(-2px); }
 
   /* ============ 回合意外事件弹窗 ============ */
   .event-overlay { position:fixed; inset:0; background:rgba(6,8,20,.74); backdrop-filter:blur(3px);
@@ -279,7 +283,10 @@
       <input type="file" id="musicFile" accept="audio/*" style="display:none">
     </div>
 
-    <button class="btn-ad" id="adBtn" type="button">🐭 猫和老鼠官方手游 · 前往官网<span class="ad-tag">广告</span></button>
+    <div class="ad-row">
+      <button class="btn-ad" id="adBtn" type="button">🐭 猫和老鼠手游 · 官网<span class="ad-tag">广告</span></button>
+      <button class="btn-author" id="authorBtn" type="button">👤 作者主页 · B站</button>
+    </div>
     <button class="btn-start" id="drawBtn">抽签开局 ▶</button>
   </div>
 </div>
@@ -1203,27 +1210,52 @@ function playBgmNote(){
     osc.start(t); osc.stop(t+0.36);
   }
 }
+// 原曲是否已被判定不可用（避免每次 startBGM 反复加载同一个失败的文件）
+let bgmFallbackUsed = false;
 function startBGM(){
   ensureAudio();
-  if(BGM_URL){
+  if(BGM_URL && !bgmFallbackUsed){
     if(!bgmAudio){
       bgmAudio = new Audio(BGM_URL);
       bgmAudio.loop = true;
       bgmAudio.volume = 0.5;
+      bgmAudio.preload = 'auto';
       // 原曲文件缺失或无法解码：自动回退到合成旋律，保证有声音
-      bgmAudio.addEventListener('error', ()=>{ bgmAudio = null; fallbackToSynth(); });
+      bgmAudio.addEventListener('error', ()=>{ bgmAudio = null; bgmFallbackUsed = true; fallbackToSynth(); });
+      // 文件较大，首次 play 时可能尚未缓冲就绪：缓冲完成后补播一次
+      bgmAudio.addEventListener('canplay', ()=>{ if(musicOn && bgmAudio) bgmAudio.play().catch(()=>{}); });
     }
-    bgmAudio.play().catch(()=>{ /* 自动播放被拦截则等下次用户手势再播 */ });
+    const p = bgmAudio.play();
+    if(p && typeof p.catch === 'function'){
+      p.catch(()=>{
+        // 自动播放被拦截或尚未就绪：用合成旋律兜底，保证「音乐开着就听得到声音」
+        fallbackToSynth();
+      });
+    }
     return;
   }
   fallbackToSynth();
 }
 function fallbackToSynth(){
+  ensureAudio();
   if(!audioCtx) return;
   if(musicTimer) return;
   musicTimer = setInterval(playBgmNote, 360);
   playBgmNote();
 }
+// 浏览器禁止无用户手势的自动播放：首次任意交互（点击 / 触摸 / 按键）时启动音乐
+let bgmGestureBound = false;
+function armFirstGestureBGM(){
+  if(bgmGestureBound) return;
+  bgmGestureBound = true;
+  const kick = ()=>{
+    if(!musicOn) return;
+    startBGM();
+    ['click','touchstart','keydown'].forEach(ev=> window.removeEventListener(ev, kick));
+  };
+  ['click','touchstart','keydown'].forEach(ev=> window.addEventListener(ev, kick));
+}
+armFirstGestureBGM();
 function stopBGM(){
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
   if(bgmAudio){ bgmAudio.pause(); }
@@ -1255,8 +1287,10 @@ document.getElementById('musicFile').onchange = (e)=>{
   const f = e.target.files && e.target.files[0];
   if(!f) return;
   stopBGM();                 // 停掉旧的（合成或原曲）
-  bgmAudio = null;
+  if(bgmAudio){ try{ bgmAudio.src = ''; }catch(err){} bgmAudio = null; }
+  if(String(BGM_URL).indexOf('blob:') === 0){ try{ URL.revokeObjectURL(BGM_URL); }catch(err){} }
   BGM_URL = URL.createObjectURL(f);   // 用本地文件作为原曲音源
+  bgmFallbackUsed = false;            // 换了新歌，允许再次尝试播放原曲
   if(musicOn) startBGM();
 };
 
@@ -1335,6 +1369,8 @@ function surrender(){
 document.getElementById('guideBtn').onclick = ()=> location.href = 'guide.html';
 // 广告按钮：新窗口打开《猫和老鼠》官方手游官网
 document.getElementById('adBtn').onclick = ()=> window.open('https://tom.163.com/', '_blank', 'noopener');
+// 作者主页：新窗口打开 B 站个人空间
+document.getElementById('authorBtn').onclick = ()=> window.open('https://space.bilibili.com/1031425535', '_blank', 'noopener');
 </script>
 </body>
 </html>
