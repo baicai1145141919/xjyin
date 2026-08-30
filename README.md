@@ -2,7 +2,7 @@
 
 一个单文件网页卡牌策略游戏。架空背景：恒盛集团在「扩张」与「监管」两条明暗中博弈。
 
-- 零依赖、纯前端：双击 `regulate-vs-expand.html` 即可在浏览器中游玩，无需服务器。
+- 零依赖、纯前端：双击 `index.html` 即可在浏览器中游玩，无需服务器；也可直接通过 GitHub Pages 静态网址访问。
 - 双角色对抗：你扮演**扩张方**或**监管方**，与 AI 对弈，后者在两种身份下都会按难度强化。
 - 明暗双线：明面资产 / 负债与隐性埋雷并存，终局或第三回合有概率暴露隐性债务。
 - 难度梯度：新手 / 普通 / 困难三档，困难模式证据线高、AI 出牌更猛。
@@ -15,8 +15,8 @@
 
 ## 文件
 
-- `regulate-vs-expand.html` —— 游戏本体（含内置新手指导页）。
+- `index.html` —— 游戏本体（含内置新手指导页），也是 GitHub Pages 的入口文件。
 
 ## 本地运行
 
-直接用浏览器打开 `regulate-vs-expand.html` 即可。
+直接用浏览器打开 `index.html` 即可。若要在 GitHub Pages 上托管，进入仓库 Settings → Pages，Source 选择 **Deploy from a branch**、分支 **main**、目录 **/(root)**，保存后即可通过 `https://baicai1145141919.github.io/xjyin/` 访问。
