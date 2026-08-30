@@ -272,7 +272,7 @@
     <div class="music-row">
       <span>🎵 背景音乐《朋友的酒》</span>
       <button class="music-toggle on" id="musicToggle" type="button">开启中</button>
-      <button class="music-pick" id="musicPick" type="button" title="选择本地《朋友的酒》音频文件（原曲）">📁 选原曲</button>
+      <button class="music-pick" id="musicPick" type="button" title="选择本地音频文件作为背景音乐">📁 选歌曲</button>
       <input type="file" id="musicFile" accept="audio/*" style="display:none">
     </div>
 
@@ -280,37 +280,6 @@
   </div>
 </div>
 
-<!-- ========== 新手指导独立页 ========== -->
-<div class="page" id="pageGuide">
-  <div class="guide-page">
-    <div class="g-top">
-      <button class="btn-new" id="guideBackBtn" type="button">← 返回开始页</button>
-      <div class="g-title">📖 新手指导 · 完整手册</div>
-    </div>
-    <div class="g-content">
-      <h4>① 你扮演谁？</h4>
-      <p>开局<b>抽签</b>随机分配你为 <b>扩张方（恒盛集团掌门人）</b> 或 <b>监管方（市场秩序维护者）</b>，另一方由 AI 接管。两种身份目标完全不同。</p>
-      <h4>② 你的目标</h4>
-      <p>· <b>扩张方</b>：10 回合后，让 <b>真实资产 ≥ 真实负债 ×1.2</b> 倍，且不被追责（证据未满阈值）即过关。<br>
-         · <b>监管方</b>：让恒盛 <b>现金跌破 0</b>，或把 <b>证据值堆到阈值</b>，即判定问责成功。</p>
-      <h4>③ 怎么操作</h4>
-      <p>每回合你可从手牌 <b>打出最多 2 张</b>（点击即出；点中央已出的牌可<b>收回</b>重打），然后点 <b>「结束本回合」</b>。AI 随后一张张慢慢出牌。你这回合还没出牌时，出牌框里会保留 <b>上一回合双方出的牌</b> 供你参考。</p>
-      <p style="color:#fbbf24">⚔️ 难度越高，对手（AI）每回合能打出的牌越多：<b>新手 2 张 / 普通 3 张 / 困难 4 张</b>。困难模式下 AI 不论扮演哪一方都强化到同一强度：当 AI 是<b>监管</b>时证据仅需 <b>18</b> 即触发「暴雷」追责；当 AI 是<b>扩张</b>时证据线高达 <b>42</b>、终局安全线仅 <b>1.10</b>，玩家几乎无从下手。</p>
-      <h4>④ 看板指标</h4>
-      <p><b>现金</b>（监管方最该盯，归零即胜）、<b>公开净资产</b>（明面门面）、<b>真实净资产 / 安全线</b>（仅扩张方可见，监管方显示 ??? 隐藏）、<b>真实负债率</b>、<b>证据值</b>进度条、<b>隐性债务隐患</b>（仅扩张方可见，由标记"埋雷"的卡累积，第3回合理财兑付危机或终局时计入真实负债）。</p>
-      <h4>⑤ 实用技巧</h4>
-      <p><span class="dim">监管方</span>：多用「调查 / 司法 / 舆情」堆证据、「市场 / 宏观 / 政策」抽现金。<br>
-         <span class="dim">扩张方</span>：用「金融」回血、「扩张 / 战略」做大规模，必要时「缓冲 / 公关」削减证据；但要警惕带 <b>⚠️埋雷</b> 的财技牌——它们短期美化或回血，却埋下隐性债务，迟早计入真实负债。</p>
-
-      <h3>🃏 卡牌图鉴（全部卡牌功能）</h3>
-      <p class="dim">扩张方共 6 大类、监管方共 6 大类。带 <b>⚠️埋雷</b> 的扩张方卡会埋下隐性债务，在第3回合（无论抽到哪种危机事件）或终局时计入真实负债。</p>
-      <h4>扩张方 · 恒盛集团</h4>
-      <div id="expGuide"></div>
-      <h4>监管方</h4>
-      <div id="regGuide"></div>
-    </div>
-  </div>
-</div>
 
 <!-- ========== 对局页 ========== -->
 <div class="page" id="pageGame">
@@ -1191,9 +1160,9 @@ function renderArenaForSide(side){
 }
 
 // ===================== 背景音乐《朋友的酒》（Web Audio 合成，离线循环） =====================
-// 默认播放同目录下的《朋友的酒.mp3》原曲；文件不存在时自动回退到合成旋律。
-// 也可点开始页「📁 选原曲」按钮，选择本地的任意音频文件（支持你自己的正版《朋友的酒》）。
-let BGM_URL = '朋友的酒.mp3';
+// 默认播放同目录下的 bgm.mp3（已上传到 GitHub，Pages 站点可直接加载）；文件不存在时自动回退到合成旋律。
+// 也可点开始页「📁 选歌曲」按钮，选择本地的任意音频文件作为背景音乐。
+let BGM_URL = 'bgm.mp3';
 let audioCtx = null, musicOn = true, musicTimer = null, musicStep = 0, bgmAudio = null;
 // 旋律（C 大调，近似《朋友的酒》副歌动机，八分音符为一拍单元，'-' 为休止）
 const BGM_NOTES = [
@@ -1358,34 +1327,8 @@ function surrender(){
   gameOver(winner, 'surrender');
 }
 
-// ===================== 新手指导独立页 =====================
-function buildGuide(){
-  const expCats = ['expand','operate','buffer','finance','pr','strategy'];
-  const regCats = ['policy','investigate','market','judicial','media','macro'];
-  let h='';
-  expCats.forEach(c=>{
-    h += '<div class="gcat"><h5>'+catIcon(c)+' '+catName(c)+'</h5><div class="gcards">';
-    EXP_CARDS.filter(x=>x.cat===c).forEach(x=>{
-      const warn = (x.eff && x.eff.hd) ? ' ⚠️埋雷' : '';
-      h += '<div class="gcard '+x.cat+'"><div class="gn">'+x.name+warn+'</div><div class="gd">'+x.desc+'</div></div>';
-    });
-    h += '</div></div>';
-  });
-  document.getElementById('expGuide').innerHTML = h;
-  let h2='';
-  regCats.forEach(c=>{
-    h2 += '<div class="gcat"><h5>'+catIcon(c)+' '+catName(c)+'</h5><div class="gcards">';
-    REG_CARDS.filter(x=>x.cat===c).forEach(x=>{
-      h2 += '<div class="gcard '+x.cat+'"><div class="gn">'+x.name+'</div><div class="gd">'+x.desc+'</div></div>';
-    });
-    h2 += '</div></div>';
-  });
-  document.getElementById('regGuide').innerHTML = h2;
-}
-
-document.getElementById('guideBtn').onclick = ()=> showScreen('pageGuide');
-document.getElementById('guideBackBtn').onclick = ()=> showScreen('pageStart');
-buildGuide();
+// 新手指导已拆分为独立 guide.html（开始页点击「📖 查看完整新手指导」跳转）
+document.getElementById('guideBtn').onclick = ()=> location.href = 'guide.html';
 </script>
 </body>
 </html>
