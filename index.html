@@ -141,6 +141,33 @@
   .log .ai { color:#fca5a5; }
   .log .you { color:#6ee7b7; }
 
+  /* ===== 开始页：卷宗风格（去模板感） ===== */
+  #pageStart .panel { background:#191d21; border:1px solid #2b3138; border-radius:4px; padding:32px 34px 26px; max-width:620px; text-align:left; box-shadow:none; position:relative; }
+  #pageStart .panel::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:#c9a227; }
+  #pageStart .panel h1 { font-size:38px; letter-spacing:10px; color:#e8edf2; margin:16px 0 8px; background:none; -webkit-text-fill-color:#e8edf2; font-weight:800; }
+  .docket { display:flex; align-items:center; gap:10px; font-size:10.5px; letter-spacing:2px; color:#6f7883; font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .docket-sep { flex:1; height:1px; background:#2b3138; }
+  .start-sub { color:#98a3af; font-size:13.5px; margin:0 0 20px; letter-spacing:1px; }
+  .start-body p { color:#b8c2cc; font-size:13.5px; line-height:2; margin:0 0 12px; }
+  .start-facts { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#2b3138; border:1px solid #2b3138; margin:18px 0 20px; }
+  .fact { background:#191d21; padding:10px 8px; }
+  .fk { display:block; font-size:10px; letter-spacing:1px; color:#6f7883; margin-bottom:3px; }
+  .fv { display:block; font-size:14px; color:#dfe6ec; font-weight:700; }
+  #pageStart .btn-start { background:#c9a227; color:#1a1d20; border-radius:3px; box-shadow:none; font-size:15px; padding:13px 40px; letter-spacing:6px; font-weight:800; }
+  #pageStart .btn-start:hover { transform:none; box-shadow:none; background:#d8b24a; }
+  #pageStart .btn-guide { background:transparent; color:#98a3af; border:1px solid #2b3138; border-radius:3px; font-size:13px; padding:9px 18px; box-shadow:none; font-weight:600; margin:0 0 18px; letter-spacing:1px; width:auto; }
+  #pageStart .btn-guide:hover { transform:none; background:#1f2429; color:#dfe6ec; border-color:#3a424b; }
+  #pageStart .diff-row { justify-content:flex-start; margin:0 0 16px; }
+  #pageStart .diff-btn { background:transparent; border:1px solid #2b3138; border-radius:3px; max-width:none; }
+  #pageStart .diff-btn:hover { border-color:#3a424b; }
+  #pageStart .diff-btn.sel { border-color:#c9a227; background:rgba(201,162,39,.10); box-shadow:none; color:#e8edf2; }
+  #pageStart .diff-btn.sel .dd { color:#c9a227; }
+  #pageStart .music-row { justify-content:flex-start; margin:0 0 20px; gap:10px; }
+  #pageStart .start-links { display:flex; align-items:center; gap:8px; margin-top:14px; }
+  .link-btn { background:none; border:none; color:#6f7883; font-size:12px; cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:3px; }
+  .link-btn:hover { color:#98a3af; }
+  .start-links .dot { color:#3a424b; font-size:12px; }
+
   /* ===== 开始页：难度 / 指导 / 音乐 ===== */
   .diff-row { display:flex; gap:10px; justify-content:center; margin:18px 0 4px; }
   .diff-btn { flex:1; max-width:160px; background:#0f172a; border:1px solid #334155; color:#cbd5e1; border-radius:10px; padding:11px 8px; cursor:pointer; font-weight:600; transition:all .15s; }
@@ -249,45 +276,46 @@
 
 <!-- ========== 开始页 ========== -->
 <div class="page active" id="pageStart">
-  <div class="panel">
-    <div class="logo">⚖️</div>
-    <h1>许印卡牌</h1>
-    <div class="tag">监管与扩张 · 双阵营经济博弈卡牌（单人对 AI）</div>
-    <div class="story">
-      一家靠高杠杆狂奔的地产巨头 <b>恒盛集团</b>，与维护市场秩序的 <b>监管方</b> 展开 10 个回合的攻防。
-      你将在开局<b>抽签</b>决定扮演哪一方——掌门人或监管者，另一方由 AI 接管。<br><br>
-      掌门人明暗双线运作：<b>公开财报</b>用来撑门面，<b>真实负债</b>才是致命隐患；监管方则靠调查堆叠证据、靠市场与宏观手段抽紧现金。
-      每回合还有<b>市场风声</b>随机搅动局势；更关键的是，<b>第 3 回合与第 5 回合会触发随机「意外事件」</b>——每局从事件池中抽取一种（如理财兑付危机、合作银行抽贷、突击现场审计等），并在回合开始时<b>弹窗告知</b>你发生了什么、影响了哪些指标。
+  <div class="panel start-panel">
+    <div class="docket">
+      <span>CASE № 001</span><span class="docket-sep"></span><span>恒盛集团 · 监管调查卷宗</span>
     </div>
-    <ul>
-      <li><b>抽签选边</b>：开局随机分配你扮演扩张方或监管方，对手为 AI。</li>
-      <li><b>明暗双线</b>：扩张方有公开净资产与真实净资产两套账。</li>
-      <li><b>证据堆叠</b>：监管方调查/司法/舆情卡累积证据值，达阈值即追责成功。</li>
-      <li><b>双重转折</b>：第3回合与第5回合会触发随机「意外事件」（每局抽取其一，回合开始弹窗预告），如理财兑付危机、合作银行抽贷、突击现场审计、流动性冻结等，直接改写现金、负债与证据局势。</li>
-      <li><b>五种结局</b>：帝国加冕 / 惊险过关 / 资金链断裂 / 追责成功 / 规模虚胖。</li>
-      <li><b>胜负</b>：扩张方需在 10 回合后真实资产 &gt; 真实负债 ×1.2 倍且未被追责；监管方使现金断裂或证据满阈值即胜。</li>
-    </ul>
+    <h1>许印卡牌</h1>
+    <p class="start-sub">十回合。一边加杠杆，一边查账。</p>
 
-    <button class="btn-guide" id="guideBtn" type="button">📖 查看完整新手指导（含全部卡牌说明）</button>
+    <div class="start-body">
+      <p>恒盛集团这些年靠借钱跑得很快，快到监管终于坐不住了。开局抽签决定你站哪边——是把摊子越铺越大的掌门人，还是要把账本翻到底的监管者，另一边交给电脑。</p>
+      <p>掌门人手上一直有两套账：一套给外面看，一套留给自己。真正要命的从来不是报表上的数字，而是藏在表外的那部分。第 3、第 5 回合还会出事，每局出什么都不一样，事先不通知。</p>
+      <div class="start-facts">
+        <div class="fact"><span class="fk">回合</span><span class="fv">10</span></div>
+        <div class="fact"><span class="fk">阵营</span><span class="fv">扩张 / 监管</span></div>
+        <div class="fact"><span class="fk">结局</span><span class="fv">5 种</span></div>
+        <div class="fact"><span class="fk">对手</span><span class="fv">电脑</span></div>
+      </div>
+    </div>
+
+    <button class="btn-guide" id="guideBtn" type="button">先看新手指导</button>
 
     <div class="diff-row" id="diffRow">
-      <button class="diff-btn" data-diff="easy"><span class="dl">新手</span><span class="dd">AI 较弱 · 容错高</span></button>
-      <button class="diff-btn sel" data-diff="normal"><span class="dl">普通</span><span class="dd">标准平衡</span></button>
-      <button class="diff-btn" data-diff="hard"><span class="dl">困难</span><span class="dd">AI 强势 · 容错低</span></button>
+      <button class="diff-btn" data-diff="easy"><span class="dl">新手</span><span class="dd">对手留手</span></button>
+      <button class="diff-btn sel" data-diff="normal"><span class="dl">普通</span><span class="dd">正常对局</span></button>
+      <button class="diff-btn" data-diff="hard"><span class="dl">困难</span><span class="dd">对手很凶</span></button>
     </div>
 
     <div class="music-row">
-      <span>🎵 背景音乐《朋友的酒》</span>
+      <span class="music-label">背景音乐《朋友的酒》</span>
       <button class="music-toggle on" id="musicToggle" type="button">开启中</button>
-      <button class="music-pick" id="musicPick" type="button" title="选择本地音频文件作为背景音乐">📁 选歌曲</button>
+      <button class="music-pick" id="musicPick" type="button" title="选择本地音频文件作为背景音乐">选歌曲</button>
       <input type="file" id="musicFile" accept="audio/*" style="display:none">
     </div>
 
-    <div class="ad-row">
-      <button class="btn-ad" id="adBtn" type="button">🐭 猫和老鼠手游 · 官网<span class="ad-tag">广告</span></button>
-      <button class="btn-author" id="authorBtn" type="button">👤 作者主页 · B站</button>
+    <button class="btn-start" id="drawBtn">抽签开局</button>
+
+    <div class="start-links">
+      <button class="link-btn" id="adBtn" type="button">猫和老鼠手游官网</button>
+      <span class="dot">·</span>
+      <button class="link-btn" id="authorBtn" type="button">作者主页（B站）</button>
     </div>
-    <button class="btn-start" id="drawBtn">抽签开局 ▶</button>
   </div>
 </div>
 
