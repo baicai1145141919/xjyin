@@ -16,7 +16,3 @@
 ## 文件
 
 - `index.html` —— 游戏本体（含内置新手指导页），也是 GitHub Pages 的入口文件。
-
-## 本地运行
-
-直接用浏览器打开 `index.html` 即可。若要在 GitHub Pages 上托管，进入仓库 Settings → Pages，Source 选择 **Deploy from a branch**、分支 **main**、目录 **/(root)**，保存后即可通过 `https://baicai1145141919.github.io/xjyin/` 访问。
